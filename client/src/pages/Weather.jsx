@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudRain, Sun, Cloud, AlertTriangle, Droplets, MapPin, Loader2 } from 'lucide-react';
+import { apiFetch } from '../lib/apiClient';
 
 const Weather = () => {
     const { t } = useTranslation();
@@ -11,8 +12,9 @@ const Weather = () => {
     const fetchWeather = async (lat = 28.6139, lon = 77.2090) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/weather?lat=${lat}&lon=${lon}`);
-            const data = await res.json();
+            const latParam = encodeURIComponent(lat);
+            const lonParam = encodeURIComponent(lon);
+            const data = await apiFetch(`/api/weather?lat=${latParam}&lon=${lonParam}`, { auth: false });
             setWeatherData(data);
         } catch (error) {
             console.error("Failed to fetch weather", error);

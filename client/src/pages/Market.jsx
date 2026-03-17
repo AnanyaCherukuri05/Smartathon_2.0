@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, Wheat, Leaf, Sprout, Cloud, Loader2, BarChart2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { apiFetch } from '../lib/apiClient';
 
 const iconsRef = { Wheat, Leaf, Sprout, Cloud };
 
@@ -12,24 +13,18 @@ const Market = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/prices')
-            .then(res => res.json())
-            .then(payload => {
+        apiFetch('/api/prices', { auth: false })
+            .then((payload) => {
                 const maybePrices = Array.isArray(payload) ? payload : payload?.data;
-
-                if (!Array.isArray(maybePrices)) {
-                    throw new Error('Unexpected /api/prices response');
-                }
-
+                if (!Array.isArray(maybePrices)) throw new Error('Unexpected /api/prices response');
                 setPrices(maybePrices);
                 setError(null);
-                setLoading(false);
             })
-            .catch(err => {
+            .catch((err) => {
                 console.error(err);
                 setError(t('market_error_load_failed'));
-                setLoading(false);
-            });
+            })
+            .finally(() => setLoading(false));
     }, [t]);
 
     if (loading) {

@@ -13,6 +13,15 @@ dotenv.config();
 // Initialize Gemini API
 const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
+const mongoConnected = () => mongoose.connection?.readyState === 1;
+
+const fallbackCrops = [
+    { name: 'Wheat', season: 'winter', soilType: 'dry', iconName: 'Wheat', colorClass: 'bg-amber-100 text-amber-700' },
+    { name: 'Rice', season: 'monsoon', soilType: 'wet', iconName: 'Leaf', colorClass: 'bg-brand-green-100 text-brand-green-700' },
+    { name: 'Maize', season: 'summer', soilType: 'dry', iconName: 'Sprout', colorClass: 'bg-yellow-100 text-yellow-700' },
+    { name: 'Cotton', season: 'summer', soilType: 'clay', iconName: 'Cloud', colorClass: 'bg-slate-100 text-slate-700' },
+];
+
 // Get Weather from OpenWeather API
 router.get('/weather', async (req, res) => {
     try {
@@ -43,18 +52,34 @@ router.get('/weather', async (req, res) => {
 router.get('/recommendations', async (req, res) => {
     try {
         const { soil, season } = req.query;
-        let crop = await Crop.findOne({ soilType: soil, season: season });
+        let crop = null;
+
+        if (mongoConnected()) {
+            crop = await Crop.findOne({ soilType: soil, season: season });
+        } else {
+            crop = fallbackCrops.find((c) => c.soilType === soil && c.season === season) || null;
+        }
+
+        // If DB is connected but not seeded (or no match), fall back safely
+        if (!crop && mongoConnected()) {
+            crop = await Crop.findOne();
+        }
+
+        if (!crop) {
+            crop = fallbackCrops.find((c) => c.soilType === soil && c.season === season) || fallbackCrops[0];
+        }
 
         // If we have Gemini setup, try to get a smart recommendation explanation
         if (ai && crop) {
             try {
+                const cropPayload = typeof crop.toObject === 'function' ? crop.toObject() : crop;
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
-                    contents: `Act as a helpful farming assistant. The user has ${soil} soil and the season is ${season}. We are recommending ${crop.name}. Give a 1 sentence simple reason why this is a good crop. Farmers with low literacy should understand it easily. No complex words.`
+                    contents: `Act as a helpful farming assistant. The user has ${soil} soil and the season is ${season}. We are recommending ${cropPayload.name}. Give a 1 sentence simple reason why this is a good crop. Farmers with low literacy should understand it easily. No complex words.`
                 });
 
                 return res.json({
-                    ...crop.toObject(),
+                    ...cropPayload,
                     aiExplanation: response.text
                 });
             } catch (geminiError) {
@@ -64,11 +89,35 @@ router.get('/recommendations', async (req, res) => {
             }
         }
 
-        if (!crop) crop = await Crop.findOne();
         res.json(crop);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch recommendation' });
+    }
+});
+
+// Soil analysis (simple rules used by the UI)
+router.post('/soil/analyze', async (req, res) => {
+    try {
+        const moisture = Number(req.body?.moisture);
+        const ph = Number(req.body?.ph);
+
+        if (!Number.isFinite(moisture) || !Number.isFinite(ph)) {
+            return res.status(400).json({ error: 'moisture and ph must be numbers' });
+        }
+
+        const moistureStatus = moisture < 30 ? 'too_dry' : moisture > 80 ? 'too_wet' : 'good';
+        const phStatus = ph < 5.5 ? 'acidic' : ph > 7.5 ? 'alkaline' : 'neutral';
+
+        res.json({
+            moisture,
+            ph,
+            moistureStatus,
+            phStatus
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to analyze soil' });
     }
 });
 

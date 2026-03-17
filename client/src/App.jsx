@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthContext } from './context/AuthContext';
+import { AuthContext } from './context/AuthContextContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Weather from './pages/Weather';

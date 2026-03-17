@@ -2,8 +2,9 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Sprout, Loader2, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/AuthContextContext';
 import { LANGUAGE_OPTIONS, normalizeLanguageCode } from '../lib/languages';
+import { apiFetch } from '../lib/apiClient';
 
 const Signup = () => {
     const { t, i18n } = useTranslation();
@@ -22,14 +23,11 @@ const Signup = () => {
         setError(null);
 
         try {
-            const res = await fetch('http://localhost:5000/api/auth/register', {
+            const data = await apiFetch('/api/auth/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, name, languagePreference })
+                auth: false,
+                body: { phone, name, languagePreference }
             });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Signup failed');
 
             login(data.user, data.token);
             navigate('/');
