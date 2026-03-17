@@ -7,12 +7,55 @@ import { apiFetch } from '../lib/apiClient';
 
 const DEFAULT_COORDS = { lat: 28.6139, lon: 77.2090 };
 
+const getCurrentPositionAsync = (options) => new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+});
+
+const getBestDevicePosition = async () => {
+    const attempts = [];
+
+    try {
+        const coarse = await getCurrentPositionAsync({
+            enableHighAccuracy: false,
+            timeout: 7000,
+            maximumAge: 300000
+        });
+        attempts.push(coarse);
+    } catch (coarseError) {
+        // Best-effort coarse reading. Continue to precise attempt.
+    }
+
+    try {
+        const precise = await getCurrentPositionAsync({
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 0
+        });
+        attempts.push(precise);
+    } catch (preciseError) {
+        if (!attempts.length) {
+            throw preciseError;
+        }
+    }
+
+    if (!attempts.length) {
+        throw new Error('Unable to detect device location');
+    }
+
+    return attempts.sort((a, b) => {
+        const aAccuracy = Number(a?.coords?.accuracy ?? Number.POSITIVE_INFINITY);
+        const bAccuracy = Number(b?.coords?.accuracy ?? Number.POSITIVE_INFINITY);
+        return aAccuracy - bAccuracy;
+    })[0];
+};
+
 const Weather = () => {
     const { t } = useTranslation();
     const [weatherData, setWeatherData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [locationStatus, setLocationStatus] = useState('detecting');
+    const [locationMeta, setLocationMeta] = useState(null);
     const [alertDeliveryStatus, setAlertDeliveryStatus] = useState(null);
 
     const fetchWeather = async (lat = DEFAULT_COORDS.lat, lon = DEFAULT_COORDS.lon, status = 'fallback') => {
@@ -31,34 +74,53 @@ const Weather = () => {
         }
     };
 
-    const requestLiveLocation = ({ fallbackToDefault = true } = {}) => {
+    const requestLiveLocation = async ({ fallbackToDefault = true } = {}) => {
         if (!navigator.geolocation) {
             setLocationStatus('unsupported');
             if (fallbackToDefault) {
+                setLocationMeta({
+                    lat: DEFAULT_COORDS.lat,
+                    lon: DEFAULT_COORDS.lon,
+                    accuracy: null,
+                    source: 'default'
+                });
                 fetchWeather(DEFAULT_COORDS.lat, DEFAULT_COORDS.lon, 'fallback');
             }
             return;
         }
 
         setLocationStatus('detecting');
+        setError(null);
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                fetchWeather(position.coords.latitude, position.coords.longitude, 'live');
-            },
-            (geoError) => {
-                console.error('Geolocation error:', geoError);
-                setError('Location permission denied. Showing default location weather.');
-                if (fallbackToDefault) {
-                    fetchWeather(DEFAULT_COORDS.lat, DEFAULT_COORDS.lon, 'fallback');
-                }
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 120000
+        try {
+            const position = await getBestDevicePosition();
+            const latitude = position?.coords?.latitude;
+            const longitude = position?.coords?.longitude;
+            const accuracy = position?.coords?.accuracy;
+
+            setLocationMeta({
+                lat: latitude,
+                lon: longitude,
+                accuracy: Number.isFinite(accuracy) ? accuracy : null,
+                source: 'live'
+            });
+
+            fetchWeather(latitude, longitude, 'live');
+        } catch (geoError) {
+            console.error('Geolocation error:', geoError);
+            setLocationStatus('denied');
+
+            if (fallbackToDefault) {
+                setError('Could not detect precise location. Showing default location weather.');
+                setLocationMeta({
+                    lat: DEFAULT_COORDS.lat,
+                    lon: DEFAULT_COORDS.lon,
+                    accuracy: null,
+                    source: 'default'
+                });
+                fetchWeather(DEFAULT_COORDS.lat, DEFAULT_COORDS.lon, 'fallback');
             }
-        );
+        }
     };
 
     useEffect(() => {
@@ -186,6 +248,7 @@ const Weather = () => {
         if (locationStatus === 'live') return 'Live location';
         if (locationStatus === 'detecting') return 'Detecting location';
         if (locationStatus === 'unsupported') return 'Location unavailable';
+        if (locationStatus === 'denied') return 'Permission denied';
         return 'Default location';
     }, [locationStatus]);
 
@@ -259,6 +322,14 @@ const Weather = () => {
                             {locationBadgeText}
                         </span>
                     </div>
+
+                    {locationMeta ? (
+                        <p className="mb-2 text-xs font-semibold text-slate-500">
+                            {locationMeta.source === 'live' && Number.isFinite(locationMeta.accuracy)
+                                ? `Accuracy ~${Math.round(locationMeta.accuracy)}m | ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`
+                                : `Using coordinates ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`}
+                        </p>
+                    ) : null}
 
                     <div className="flex items-start justify-center">
                         <span className="text-display text-6xl font-semibold tracking-tighter text-slate-800">
