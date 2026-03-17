@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { CloudRain, Sun, Cloud, AlertTriangle, Droplets, MapPin, Loader2 } from 'lucide-react';
+import { CloudRain, Sun, Cloud, AlertTriangle, Droplets, MapPin, Loader2, Wind } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import SectionHeader from '../components/SectionHeader';
 
 const Weather = () => {
     const { t } = useTranslation();
-    const MotionButton = motion.button;
-    const MotionDiv = motion.div;
     const [weatherData, setWeatherData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -42,10 +39,10 @@ const Weather = () => {
 
     const getWeatherVisuals = (code) => {
         // OpenWeather codes (800 is clear, 80x is clouds, 5xx is rain, etc)
-        if (code === 800) return { icon: Sun, color: 'text-amber-500', bg: 'bg-amber-100' };
-        if (code > 800) return { icon: Cloud, color: 'text-slate-500', bg: 'bg-slate-100' };
-        if (code >= 500 && code < 600) return { icon: CloudRain, color: 'text-blue-500', bg: 'bg-blue-100' };
-        return { icon: Sun, color: 'text-amber-500', bg: 'bg-amber-100' };
+        if (code === 800) return { icon: Sun, color: 'text-green-600', bg: 'bg-green-100' };
+        if (code > 800) return { icon: Cloud, color: 'text-green-600', bg: 'bg-green-100' };
+        if (code >= 500 && code < 600) return { icon: CloudRain, color: 'text-green-600', bg: 'bg-green-100' };
+        return { icon: Sun, color: 'text-green-600', bg: 'bg-green-100' };
     };
 
     const getAdvisory = (code) => {
@@ -86,49 +83,59 @@ const Weather = () => {
                 title={t('weather')}
                 subtitle="Field-aware climate updates"
                 action={(
-                    <MotionButton
+                    <button
+                        type="button"
                         onClick={handleGetLocation}
-                        whileTap={{ scale: 0.95 }}
-                        className="rounded-2xl border border-white/15 bg-white/8 p-2.5 text-slate-200"
+                        className="rounded-xl border border-green-200 bg-white p-2.5 text-green-600 transition-colors hover:bg-green-50"
                     >
                         <MapPin className="h-5 w-5" />
-                    </MotionButton>
+                    </button>
                 )}
             />
 
-            <GlassCard className="relative overflow-hidden p-7 text-center">
-                <div className="absolute -right-8 -top-12 h-36 w-36 rounded-full bg-cyan-300/25 blur-3xl" />
-                <div className="absolute -bottom-14 -left-8 h-36 w-36 rounded-full bg-indigo-300/20 blur-3xl" />
-
-                <MotionDiv
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="relative z-10"
-                >
+            <GlassCard className="p-7 text-center">
+                <div>
                     <WeatherIcon className={`mx-auto mb-3 h-28 w-28 ${visuals.color}`} />
 
                     <div className="flex items-start justify-center">
-                        <span className="text-display text-6xl font-semibold tracking-tighter text-white">
+                        <span className="text-display text-6xl font-semibold tracking-tighter text-gray-800">
                         {Math.round(current?.temperature || 0)}
                     </span>
-                        <span className="mt-2 text-2xl font-semibold text-slate-300">°C</span>
+                        <span className="mt-2 text-2xl font-semibold text-gray-500">°C</span>
                     </div>
 
-                    <p className="mt-2 text-base font-medium capitalize text-slate-200">
+                    <p className="mt-2 text-base font-medium capitalize text-gray-600">
                         {current?.description || 'Clear'} | Wind: {Math.round(current?.wind_speed || 0)} km/h
                     </p>
-                </MotionDiv>
+
+                    <div className="mt-6 grid grid-cols-2 gap-3 text-left">
+                        <div className="rounded-xl border border-green-100 bg-green-50 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">Condition</p>
+                            <div className="mt-2 flex items-center gap-2 text-gray-800">
+                                <Droplets className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-semibold">{current?.description || 'Clear skies'}</span>
+                            </div>
+                        </div>
+                        <div className="rounded-xl border border-green-100 bg-green-50 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">Wind Speed</p>
+                            <div className="mt-2 flex items-center gap-2 text-gray-800">
+                                <Wind className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-semibold">{Math.round(current?.wind_speed || 0)} km/h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </GlassCard>
 
             <SectionHeader title={t('advisory')} className="mb-0" />
-            <GlassCard className={`p-5 ${advisory.alert ? 'border-red-300/25 bg-red-300/10' : 'border-emerald-300/25 bg-emerald-300/10'}`}>
+            <GlassCard className={`p-5 ${advisory.alert ? 'border-green-200 bg-green-50' : 'border-green-200 bg-green-50'}`}>
                 <div className="flex items-center gap-4">
-                    <div className={`rounded-2xl p-3 ${advisory.alert ? 'bg-red-200/20 text-red-200' : 'bg-emerald-200/20 text-emerald-200'}`}>
+                    <div className="rounded-xl bg-green-100 p-3 text-green-600">
                         {advisory.alert ? <AlertTriangle className="h-8 w-8" /> : <Droplets className="h-8 w-8" />}
                     </div>
                     <div>
-                        <h4 className="text-lg font-semibold text-white">{advisory.msg}</h4>
-                        <p className="text-sm font-medium text-slate-200">{advisory.action}</p>
+                        <h4 className="text-lg font-semibold text-gray-800">{advisory.msg}</h4>
+                        <p className="text-sm font-medium text-gray-600">{advisory.action}</p>
                     </div>
                 </div>
             </GlassCard>

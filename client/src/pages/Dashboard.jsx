@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { Sprout, CloudSun, Beaker, Bug, LineChart } from 'lucide-react';
 import ActionCard from '../components/ActionCard';
 import GlassCard from '../components/GlassCard';
@@ -8,7 +7,8 @@ import SectionHeader from '../components/SectionHeader';
 
 const Dashboard = () => {
     const { t } = useTranslation();
-    const MotionDiv = motion.div;
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
 
     const actions = [
         {
@@ -16,68 +16,55 @@ const Dashboard = () => {
             icon: Sprout,
             colorClass: 'bg-green-100 text-green-600',
             path: '/crops',
+            description: 'Find the best crop fit for your field conditions.',
         },
         {
             title: t('weather'),
             icon: CloudSun,
-            colorClass: 'bg-blue-100 text-blue-600',
+            colorClass: 'bg-green-100 text-green-600',
             path: '/weather',
+            description: 'Track live weather signals before field work.',
         },
         {
             title: t('soil'),
             icon: Beaker,
-            colorClass: 'bg-amber-100 text-amber-600',
+            colorClass: 'bg-green-100 text-green-600',
             path: '/soil',
+            description: 'Check soil insights to support healthier growth.',
         },
         {
             title: t('pests'),
             icon: Bug,
-            colorClass: 'bg-red-100 text-red-600',
+            colorClass: 'bg-green-100 text-green-600',
             path: '/pests',
+            description: 'Scan crop images for early pest detection.',
         },
         {
             title: t('market'),
             icon: LineChart,
-            colorClass: 'bg-purple-100 text-purple-600',
+            colorClass: 'bg-green-100 text-green-600',
             path: '/market',
+            description: 'Review market movement before selling produce.',
         },
     ];
 
     return (
         <div className="space-y-6 pb-10">
-            <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                <GlassCard className="card-neuro relative overflow-hidden p-6">
-                    <div className="absolute -top-24 right-0 h-52 w-52 rounded-full bg-cyan-300/20 blur-3xl" />
-                    <div className="absolute -bottom-20 left-0 h-44 w-44 rounded-full bg-emerald-300/20 blur-3xl" />
-                    <div className="relative z-10">
-                        <p className="text-sm font-medium uppercase tracking-[0.22em] text-emerald-200/80">Smart Crop App</p>
-                        <h2 className="text-display mt-3 text-3xl font-semibold leading-tight text-white">{t('app_title')}</h2>
-                        <p className="mt-2 max-w-xs text-sm font-medium leading-relaxed text-slate-200/90">{t('tagline')}</p>
-                    </div>
-                </GlassCard>
-            </MotionDiv>
+            <GlassCard className="p-6">
+                <p className="text-sm font-medium text-green-600">{greeting}</p>
+                <h2 className="text-display mt-2 text-3xl font-semibold text-gray-800">{t('app_title')}</h2>
+                <p className="mt-2 max-w-xs text-sm font-medium leading-relaxed text-gray-600">{t('tagline')}</p>
+            </GlassCard>
 
             <SectionHeader title={t('dashboard') || 'Dashboard'} subtitle="Your crop intelligence workspace" />
 
-            <MotionDiv
-                className="grid grid-cols-2 gap-4"
-                initial="hidden"
-                animate="show"
-                variants={{
-                    hidden: {},
-                    show: { transition: { staggerChildren: 0.08 } },
-                }}
-            >
+            <div className="grid grid-cols-2 gap-4">
                 {actions.map((action, index) => (
-                    <MotionDiv
-                        key={index}
-                        variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
-                        className={index === 0 ? 'col-span-2' : 'col-span-1'}
-                    >
+                    <div key={index} className={index === 0 ? 'col-span-2' : 'col-span-1'}>
                         <ActionCard {...action} />
-                    </MotionDiv>
+                    </div>
                 ))}
-            </MotionDiv>
+            </div>
         </div>
     );
 };
