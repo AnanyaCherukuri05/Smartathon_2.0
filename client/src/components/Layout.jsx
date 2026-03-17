@@ -13,7 +13,7 @@ const Layout = () => {
             <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-3 sm:px-5">
                 <TopBar />
 
-                <main className="flex-1 overflow-y-auto pb-28 pt-3 sm:pt-4">
+                <main className="flex-1 overflow-y-auto pb-28 pt-28 sm:pt-28">
                     <div className="mx-auto w-full max-w-4xl">
                         <Outlet />
                     </div>
