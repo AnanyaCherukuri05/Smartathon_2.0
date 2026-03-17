@@ -31,7 +31,7 @@ const BottomNav = () => {
                                 <div className={`${isActive ? 'rounded-xl bg-white p-2 shadow-sm' : 'p-2'}`}>
                                     {item.icon}
                                 </div>
-                                <span className="truncate text-[11px] font-bold uppercase tracking-[0.08em]">
+                                <span className="hidden truncate text-[11px] font-bold uppercase tracking-[0.08em] sm:block">
                                     {item.label}
                                 </span>
                                 {isActive && (

@@ -27,7 +27,7 @@ const TopBar = () => {
     const routeLabel = routeLabelMap[location.pathname] || 'KisanSetu';
 
     return (
-        <div className="sticky top-0 z-30 px-2 pb-2 pt-3 sm:px-0">
+        <div className="fixed left-0 right-0 top-0 z-50 mx-auto w-full max-w-5xl px-3 pb-2 pt-3 sm:px-5">
             <GlassCard className="flex flex-wrap items-center justify-between gap-3 border-emerald-100/80 px-4 py-3.5 sm:flex-nowrap sm:px-5">
                 <div className="min-w-0 flex-1">
                     <p className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700/75">
@@ -49,15 +49,15 @@ const TopBar = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-white/85 px-3 py-2">
+                <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+                    <div className="flex h-11 items-center gap-2 rounded-2xl border border-emerald-100 bg-white/85 px-3">
                         <Globe className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                         <label className="sr-only" htmlFor="language">{t('select_language') || 'Select Language'}</label>
                         <select
                             id="language"
                             value={languageValue}
                             onChange={(e) => setLanguagePreference?.(e.target.value)}
-                            className="max-w-[96px] bg-transparent text-xs font-bold text-slate-700 focus:outline-none"
+                            className="max-w-[88px] bg-transparent text-xs font-bold text-slate-700 focus:outline-none"
                         >
                             {LANGUAGE_OPTIONS.map((lang) => (
                                 <option key={lang.code} value={lang.code} className="bg-white text-slate-800">
@@ -70,14 +70,16 @@ const TopBar = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/profile')}
-                        className="flex items-center justify-center rounded-2xl border border-emerald-200 bg-white/90 p-3 text-emerald-700 transition-colors hover:bg-emerald-50"
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-200 bg-white/90 text-emerald-700 transition-colors hover:bg-emerald-50"
                         aria-label="Profile"
                     >
                         {userInitial ? <span className="text-sm font-extrabold">{userInitial}</span> : <UserRound className="h-5 w-5" />}
                     </button>
                 </div>
             </GlassCard>
+            
         </div>
+        
     );
 };
 
