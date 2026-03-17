@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/auth-context';
 import GlassCard from '../components/GlassCard';
 import GradientButton from '../components/GradientButton';
+import { apiFetch } from '../lib/apiClient';
 
 const Login = () => {
     const { t } = useTranslation();
@@ -24,14 +25,11 @@ const Login = () => {
         setError(null);
 
         try {
-            const res = await fetch('http://localhost:5000/api/auth/login', {
+            const data = await apiFetch('/api/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, name })
+                body: { phone, name },
+                auth: false
             });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Login failed');
 
             login(data.user, data.token);
             navigate('/');

@@ -7,6 +7,7 @@ import { AuthContext } from '../context/auth-context';
 import { LANGUAGE_OPTIONS, normalizeLanguageCode } from '../lib/languages';
 import GlassCard from '../components/GlassCard';
 import GradientButton from '../components/GradientButton';
+import { apiFetch } from '../lib/apiClient';
 
 const Signup = () => {
     const { t, i18n } = useTranslation();
@@ -26,14 +27,11 @@ const Signup = () => {
         setError(null);
 
         try {
-            const res = await fetch('http://localhost:5000/api/auth/register', {
+            const data = await apiFetch('/api/auth/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, name, languagePreference })
+                body: { phone, name, languagePreference },
+                auth: false
             });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Signup failed');
 
             login(data.user, data.token);
             navigate('/');
