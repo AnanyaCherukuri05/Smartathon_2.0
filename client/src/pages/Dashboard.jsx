@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { Sprout, CloudSun, Beaker, Bug, LineChart } from 'lucide-react';
 import ActionCard from '../components/ActionCard';
 import { AuthContext } from '../context/AuthContext';
@@ -62,11 +63,15 @@ const Dashboard = () => {
             {/* Grid Menu */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {actions.map((action, index) => (
-                    <div key={index} className={index === 0 ? "col-span-2" : "col-span-1"}>
+                    <MotionDiv
+                        key={index}
+                        variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
+                        className={index === 0 ? 'col-span-2' : 'col-span-1'}
+                    >
                         <ActionCard {...action} />
-                    </div>
+                    </MotionDiv>
                 ))}
-            </div>
+            </MotionDiv>
         </div>
     );
 };

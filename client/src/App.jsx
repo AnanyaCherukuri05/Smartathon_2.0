@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from './context/auth-context';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Weather from './pages/Weather';

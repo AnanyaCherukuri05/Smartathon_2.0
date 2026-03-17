@@ -85,11 +85,11 @@ const Pests = () => {
             )}
 
             {isScanning && (
-                <div className="flex flex-col items-center justify-center p-8 mt-12 min-h-[300px]">
-                    <div className="relative w-32 h-32 flex items-center justify-center mb-6">
-                        <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-brand-green-500 rounded-full border-t-transparent animate-spin"></div>
-                        <Camera className="w-12 h-12 text-brand-green-600 animate-pulse" />
+                <GlassCard className="mt-8 p-8 text-center">
+                    <div className="relative mx-auto mb-6 flex h-32 w-32 items-center justify-center">
+                        <div className="absolute inset-0 rounded-full border-4 border-slate-200/20"></div>
+                        <div className="absolute inset-0 animate-spin rounded-full border-4 border-emerald-300 border-t-transparent"></div>
+                        <Camera className="h-12 w-12 animate-pulse text-emerald-200" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-800 animate-pulse">{t('pests_scanning_title')}</h3>
                     <p className="text-slate-500 mt-2 font-medium">{t('pests_scanning_subtitle')}</p>
@@ -97,17 +97,20 @@ const Pests = () => {
             )}
 
             {error && !isScanning && (
-                <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl flex items-center justify-center font-bold">
+                <GlassCard className="rounded-2xl border-red-300/35 bg-red-400/10 p-4 text-center text-sm font-semibold text-red-200">
                     {error}
-                </div>
+                </GlassCard>
             )}
 
             {result && (
-                <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
-                    {/* Result Card */}
-                    <div className="bg-amber-50 border border-amber-100 rounded-3xl p-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <ShieldCheck className="w-32 h-32 text-amber-600" />
+                <MotionDiv
+                    className="space-y-6"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <GlassCard className="relative overflow-hidden p-6">
+                        <div className="absolute -right-8 -top-10 opacity-20">
+                            <ShieldCheck className="h-28 w-28 text-emerald-200" />
                         </div>
 
                         <div className="flex flex-col gap-4 mb-2 relative z-10">
@@ -117,19 +120,19 @@ const Pests = () => {
                                 </div>
                                 <h3 className="text-xl font-extrabold text-slate-800">{t('pests_ai_diagnosis')}</h3>
                             </div>
+                            <h3 className="text-display text-2xl font-semibold text-white">AI Diagnosis</h3>
                         </div>
 
-                        {/* Solution Card inside Result */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm relative z-10 mt-4">
-                            <p className="text-slate-700 font-medium text-lg leading-relaxed whitespace-pre-wrap">
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/40 p-5">
+                            <p className="whitespace-pre-wrap text-base font-medium leading-relaxed text-slate-100">
                                 {result.analysis}
                             </p>
                         </div>
-                    </div>
+                    </GlassCard>
 
-                    <button
+                    <GradientButton
                         onClick={handleReset}
-                        className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold active:scale-95 transition-transform flex justify-center items-center gap-2"
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.45)]"
                     >
                         <RefreshCw className="w-5 h-5" />
                         {t('pests_scan_another')}

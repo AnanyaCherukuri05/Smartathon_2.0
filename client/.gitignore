@@ -25,3 +25,9 @@ dist-ssr
 
 
 node_modules
+
+# Env files (keep secrets out of git)
+.env
+.env.*
+!.env.example
+!.env.sample

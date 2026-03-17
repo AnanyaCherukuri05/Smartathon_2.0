@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { Home, Sprout, CloudSun, Beaker, Bug, LineChart } from 'lucide-react';
 
 const navItems = [
@@ -24,29 +25,35 @@ const BottomNav = () => {
         if (path === '/market') return t('market');
         return 'Navigation';
     };
+    const MotionDiv = motion.div;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-100 px-2 py-3 pb-safe z-50 rounded-t-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
-            <div className="flex justify-around items-center">
+        <div className="fixed bottom-3 left-0 right-0 z-50 mx-auto w-full max-w-md px-3">
+            <div className="card-neuro flex items-center justify-around rounded-2xl border border-white/10 bg-slate-900/65 px-2 py-2 backdrop-blur-2xl">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
                         aria-label={getLabel(item.path)}
                         className={({ isActive }) =>
-                            `flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 relative ${isActive
-                                ? 'text-brand-green-600 bg-brand-green-50 scale-110'
-                                : 'text-slate-400 hover:bg-slate-50'
+                            `relative flex flex-col items-center justify-center rounded-xl px-3 py-2 transition-all duration-300 ${isActive
+                                ? 'text-emerald-200'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             }`
                         }
                     >
                         {({ isActive }) => (
-                            <>
-                                {item.icon}
+                            <MotionDiv
+                                whileTap={{ scale: 0.92 }}
+                                className="flex flex-col items-center"
+                            >
+                                <div className={`${isActive ? 'rounded-xl bg-gradient-to-br from-emerald-400/35 to-cyan-400/25 p-2 shadow-[0_6px_18px_rgba(45,212,191,0.24)]' : 'p-2'}`}>
+                                    {item.icon}
+                                </div>
                                 {isActive && (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-green-500 absolute -bottom-1"></span>
+                                    <span className="absolute -bottom-0.5 h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.9)]"></span>
                                 )}
-                            </>
+                            </MotionDiv>
                         )}
                     </NavLink>
                 ))}
