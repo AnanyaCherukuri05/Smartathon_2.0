@@ -7,8 +7,9 @@ import Dashboard from './pages/Dashboard';
 import Weather from './pages/Weather';
 import Crops from './pages/Crops';
 import Pests from './pages/Pests';
-import Soil from './pages/Soil';
 import Market from './pages/Market';
+import Chat from './pages/Chat';
+import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -36,16 +37,15 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Routes>
-      {/* Public Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-
-      {/* Protected Main App Routes */}
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="crops" element={<Crops />} />
         <Route path="weather" element={<Weather />} />
-        <Route path="soil" element={<Soil />} />
+        <Route path="chat" element={<Chat />} />
+        <Route path="soil" element={<Navigate to="/chat" replace />} />
+        <Route path="profile" element={<Profile />} />
         <Route path="pests" element={<Pests />} />
         <Route path="market" element={<Market />} />
       </Route>

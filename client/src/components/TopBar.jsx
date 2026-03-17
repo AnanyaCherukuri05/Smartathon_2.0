@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Globe, LogOut, Sparkles, UserRound } from 'lucide-react';
+import { Globe, Sparkles, UserRound } from 'lucide-react';
 import { AuthContext } from '../context/auth-context';
 import { LANGUAGE_OPTIONS, normalizeLanguageCode } from '../lib/languages';
 import GlassCard from './GlassCard';
@@ -10,15 +10,17 @@ const routeLabelMap = {
     '/': 'Dashboard',
     '/crops': 'Crop Planner',
     '/weather': 'Weather Watch',
-    '/soil': 'Soil Lab',
+    '/chat': 'AI Chat',
     '/pests': 'Pest Scanner',
-    '/market': 'Market Board'
+    '/market': 'Market Board',
+    '/profile': 'Profile'
 };
 
 const TopBar = () => {
     const { t, i18n } = useTranslation();
     const location = useLocation();
-    const { logout, user, setLanguagePreference } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const { user, setLanguagePreference } = useContext(AuthContext);
 
     const languageValue = normalizeLanguageCode(user?.languagePreference || i18n.language || 'en');
     const userInitial = user?.name?.trim()?.charAt(0)?.toUpperCase();
@@ -48,10 +50,6 @@ const TopBar = () => {
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-100 bg-white/90 text-emerald-700">
-                        {userInitial ? <span className="text-sm font-bold">{userInitial}</span> : <UserRound className="h-5 w-5" />}
-                    </div>
-
                     <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-white/85 px-3 py-2">
                         <Globe className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                         <label className="sr-only" htmlFor="language">{t('select_language') || 'Select Language'}</label>
@@ -71,11 +69,11 @@ const TopBar = () => {
 
                     <button
                         type="button"
-                        onClick={logout}
+                        onClick={() => navigate('/profile')}
                         className="flex items-center justify-center rounded-2xl border border-emerald-200 bg-white/90 p-3 text-emerald-700 transition-colors hover:bg-emerald-50"
-                        aria-label="Logout"
+                        aria-label="Profile"
                     >
-                        <LogOut className="h-5 w-5" />
+                        {userInitial ? <span className="text-sm font-extrabold">{userInitial}</span> : <UserRound className="h-5 w-5" />}
                     </button>
                 </div>
             </GlassCard>

@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Sprout, CloudSun, Beaker, Bug, LineChart } from 'lucide-react';
+import { Home, Sprout, CloudSun, MessageSquare, Bug, LineChart } from 'lucide-react';
 
 const navItems = [
     { path: '/', icon: <Home className="w-6 h-6" />, label: 'Home' },
     { path: '/crops', icon: <Sprout className="w-6 h-6" />, label: 'Crops' },
     { path: '/weather', icon: <CloudSun className="w-6 h-6" />, label: 'Weather' },
-    { path: '/soil', icon: <Beaker className="w-6 h-6" />, label: 'Soil' },
+    { path: '/chat', icon: <MessageSquare className="w-6 h-6" />, label: 'AI Chat' },
     { path: '/pests', icon: <Bug className="w-6 h-6" />, label: 'Pests' },
     { path: '/market', icon: <LineChart className="w-6 h-6" />, label: 'Market' },
 ];

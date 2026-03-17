@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Camera, Image as ImageIcon, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Camera, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import PestResultCard from '../components/PestResultCard';
 import SectionHeader from '../components/SectionHeader';
 import GlassCard from '../components/GlassCard';
@@ -66,8 +66,8 @@ const Pests = () => {
             });
 
             setResult({
-                status: 'analyzed',
-                data: data
+                ...data,
+                diagnosis: data?.diagnosis ?? data?.analysis ?? ''
             });
         } catch (err) {
             console.error(err);
@@ -175,8 +175,6 @@ const Pests = () => {
         closeLiveCamera();
     };
 
-    const diagnosisText = result?.data?.diagnosis || 'Analysis complete. Please review the advisory below.';
-
     return (
         <div className="page-reveal space-y-6 pb-10">
             <SectionHeader
@@ -192,15 +190,6 @@ const Pests = () => {
                     </div>
                     <h3 className="text-display mb-2 text-2xl font-semibold text-slate-800">Take a photo of your crop</h3>
                     <p className="mb-8 text-sm font-medium text-slate-600">For best results, capture leaves with good daylight and visible affected areas.</p>
-
-                    <div className="mb-8 grid grid-cols-3 gap-3 text-left">
-                        {['Leaf scan', 'Disease clue', 'Field ready'].map((item) => (
-                            <div key={item} className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
-                                <div className="mb-2 h-16 rounded-xl bg-white" />
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">{item}</p>
-                            </div>
-                        ))}
-                    </div>
 
                     <input
                         type="file"
@@ -295,48 +284,29 @@ const Pests = () => {
             )}
 
             {error && !isScanning && (
-                <GlassCard className="rounded-2xl border-red-200 bg-red-50 p-4 text-center text-sm font-semibold text-red-700">
-                    {error}
+                <GlassCard className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center">
+                    <p className="text-sm font-semibold text-red-700">{error}</p>
+                    <GradientButton
+                        onClick={handleReset}
+                        className="mx-auto mt-4 flex items-center justify-center gap-2"
+                    >
+                        <RefreshCw className="h-5 w-5" />
+                        Try Again
+                    </GradientButton>
                 </GlassCard>
             )}
 
             {result && (
                 <div className="space-y-6">
-                    <GlassCard className="border-emerald-100/80 p-6">
-                        <div className="mb-4 grid grid-cols-3 gap-3">
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3" />
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3" />
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3" />
-                        </div>
-                        <div className="hidden">
-                            <ShieldCheck className="h-28 w-28 text-emerald-200" />
-                        </div>
+                    <PestResultCard result={result} />
 
-                        <div className="mb-2 flex items-center gap-3">
-                            <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700">
-                                <ShieldCheck className="h-7 w-7" />
-                            </div>
-                            <h3 className="text-display text-2xl font-semibold text-slate-800">AI Diagnosis</h3>
-                        </div>
-
-                        <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
-                            <p className="whitespace-pre-wrap text-base font-medium leading-relaxed text-slate-700">
-                                {diagnosisText}
-                            </p>
-                        </div>
-                    </GlassCard>
-
-                    <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
-                        <PestResultCard result={result.data} />
-
-                        <GradientButton
-                            onClick={handleReset}
-                            className="flex items-center justify-center gap-2"
-                        >
-                            <RefreshCw className="h-5 w-5" />
-                            Scan Another Crop
-                        </GradientButton>
-                    </div>
+                    <GradientButton
+                        onClick={handleReset}
+                        className="flex items-center justify-center gap-2"
+                    >
+                        <RefreshCw className="h-5 w-5" />
+                        Scan Another Crop
+                    </GradientButton>
                 </div>
             )}
 
@@ -345,7 +315,6 @@ const Pests = () => {
                     <p className="text-sm font-medium text-gray-600">No scans yet. Upload a photo to start diagnosis.</p>
                 </GlassCard>
             )}
-
         </div>
     );
 };
