@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Sprout, Loader2, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
+import { LANGUAGE_OPTIONS, normalizeLanguageCode } from '../lib/languages';
 
 const Signup = () => {
     const { t, i18n } = useTranslation();
@@ -11,7 +12,7 @@ const Signup = () => {
 
     const [phone, setPhone] = useState('');
     const [name, setName] = useState('');
-    const [languagePreference, setLanguagePreference] = useState(i18n.language || 'en');
+    const [languagePreference, setLanguagePreference] = useState(normalizeLanguageCode(i18n.language || 'en'));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -95,12 +96,11 @@ const Signup = () => {
                             }}
                             className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg font-medium transition-all appearance-none"
                         >
-                            <option value="en">English (English)</option>
-                            <option value="hi">हिंदी (Hindi)</option>
-                            <option value="te">తెలుగు (Telugu)</option>
-                            <option value="mr">मराठी (Marathi)</option>
-                            <option value="ta">தமிழ் (Tamil)</option>
-                            <option value="ml">മലയാളം (Malayalam)</option>
+                            {LANGUAGE_OPTIONS.map((lang) => (
+                                <option key={lang.code} value={lang.code}>
+                                    {lang.nativeLabel} ({lang.label})
+                                </option>
+                            ))}
                         </select>
                     </div>
 

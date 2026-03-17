@@ -2,12 +2,13 @@ import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, LogOut } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { LANGUAGE_OPTIONS, normalizeLanguageCode } from '../lib/languages';
 
 const TopBar = () => {
     const { t, i18n } = useTranslation();
     const { logout, user, setLanguagePreference } = useContext(AuthContext);
 
-    const languageValue = (user?.languagePreference || i18n.language || 'en').split('-')[0];
+    const languageValue = normalizeLanguageCode(user?.languagePreference || i18n.language || 'en');
 
 
 
@@ -35,12 +36,11 @@ const TopBar = () => {
                         onChange={(e) => setLanguagePreference?.(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none"
                     >
-                        <option value="en">EN</option>
-                        <option value="hi">HI</option>
-                        <option value="te">TE</option>
-                        <option value="mr">MR</option>
-                        <option value="ta">TA</option>
-                        <option value="ml">ML</option>
+                        {LANGUAGE_OPTIONS.map((lang) => (
+                            <option key={lang.code} value={lang.code}>
+                                {lang.nativeLabel}
+                            </option>
+                        ))}
                     </select>
                 </div>
 

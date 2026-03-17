@@ -27,16 +27,16 @@ const Market = () => {
             })
             .catch(err => {
                 console.error(err);
-                setError('Failed to load market prices');
+                setError(t('market_error_load_failed'));
                 setLoading(false);
             });
-    }, []);
+    }, [t]);
 
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-brand-green-600">
                 <Loader2 className="w-12 h-12 animate-spin mb-4" />
-                <p className="font-bold">Loading Market...</p>
+                <p className="font-bold">{t('market_loading')}</p>
             </div>
         );
     }
@@ -45,7 +45,7 @@ const Market = () => {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-red-600">
                 <p className="font-bold">{error}</p>
-                <p className="text-sm text-slate-500 mt-1">Make sure the API server is running on port 5000.</p>
+                <p className="text-sm text-slate-500 mt-1">{t('market_error_api_hint')}</p>
             </div>
         );
     }
@@ -65,13 +65,13 @@ const Market = () => {
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
             <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                 <BarChart2 className="w-6 h-6 text-brand-green-600" />
-                {t('market')} Prices
+                {t('market_title')}
             </h2>
 
             {/* Professional Trend Chart */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mb-8">
-                <h3 className="text-lg font-bold text-slate-800 mb-1">Weekly Market Trend</h3>
-                <p className="text-sm text-slate-500 mb-6 font-medium">Average price index across major markets (₹)</p>
+                <h3 className="text-lg font-bold text-slate-800 mb-1">{t('market_weekly_trend')}</h3>
+                <p className="text-sm text-slate-500 mb-6 font-medium">{t('market_avg_index')}</p>
 
                 <div className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -94,8 +94,8 @@ const Market = () => {
             </div>
 
             <div className="flex items-center justify-between mb-2 mt-4">
-                <h3 className="text-lg font-bold text-slate-800">Current Rates</h3>
-                <span className="text-xs font-bold bg-brand-green-100 text-brand-green-700 px-2 py-1 rounded-full">Per Quintal</span>
+                <h3 className="text-lg font-bold text-slate-800">{t('market_current_rates')}</h3>
+                <span className="text-xs font-bold bg-brand-green-100 text-brand-green-700 px-2 py-1 rounded-full">{t('market_per_quintal')}</span>
             </div>
 
             <div className="grid gap-4">

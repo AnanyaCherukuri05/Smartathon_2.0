@@ -8,15 +8,15 @@ const Soil = () => {
     const [ph, setPh] = useState(6.5); // 0-14
 
     const getMoistureStatus = (val) => {
-        if (val < 30) return { text: 'Too Dry', icon: AlertCircle, color: 'text-orange-500 bg-orange-100', need: 'Water immediately 💧' };
-        if (val > 80) return { text: 'Too Wet', icon: AlertCircle, color: 'text-blue-500 bg-blue-100', need: 'Stop watering 🚫' };
-        return { text: 'Good', icon: ThumbsUp, color: 'text-brand-green-500 bg-brand-green-100', need: 'Perfect moisture ✅' };
+        if (val < 30) return { text: t('soil_moisture_too_dry'), icon: AlertCircle, color: 'text-orange-500 bg-orange-100', need: t('soil_moisture_need_water') };
+        if (val > 80) return { text: t('soil_moisture_too_wet'), icon: AlertCircle, color: 'text-blue-500 bg-blue-100', need: t('soil_moisture_need_stop') };
+        return { text: t('soil_status_good'), icon: ThumbsUp, color: 'text-brand-green-500 bg-brand-green-100', need: t('soil_moisture_need_perfect') };
     };
 
     const getPhStatus = (val) => {
-        if (val < 5.5) return { text: 'Acidic', color: 'text-red-500 bg-red-100', action: 'Add lime' };
-        if (val > 7.5) return { text: 'Alkaline', color: 'text-purple-500 bg-purple-100', action: 'Add sulfur' };
-        return { text: 'Neutral', color: 'text-brand-green-500 bg-brand-green-100', action: 'Great soil' };
+        if (val < 5.5) return { text: t('soil_ph_acidic'), color: 'text-red-500 bg-red-100', action: t('soil_ph_action_add_lime') };
+        if (val > 7.5) return { text: t('soil_ph_alkaline'), color: 'text-purple-500 bg-purple-100', action: t('soil_ph_action_add_sulfur') };
+        return { text: t('soil_ph_neutral'), color: 'text-brand-green-500 bg-brand-green-100', action: t('soil_ph_action_great') };
     };
 
     const currentMoisStatus = getMoistureStatus(moisture);
@@ -24,13 +24,13 @@ const Soil = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
-            <h2 className="text-2xl font-bold text-slate-800">{t('soil')} Health</h2>
+            <h2 className="text-2xl font-bold text-slate-800">{t('soil_health_title')}</h2>
 
             {/* Moisture Card */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <Droplets className="w-6 h-6 text-blue-500" /> Moisture
+                        <Droplets className="w-6 h-6 text-blue-500" /> {t('soil_moisture')}
                     </h3>
                     <span className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${currentMoisStatus.color}`}>
                         <currentMoisStatus.icon className="w-4 h-4" /> {currentMoisStatus.text}
@@ -57,7 +57,7 @@ const Soil = () => {
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <Beaker className="w-6 h-6 text-purple-500" /> pH Level
+                        <Beaker className="w-6 h-6 text-purple-500" /> {t('soil_ph_level')}
                     </h3>
                     <span className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${currentPhStatus.color}`}>
                         {currentPhStatus.text}
@@ -83,8 +83,8 @@ const Soil = () => {
                             <ShoppingBag className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="font-bold text-orange-800">Add Agricultural Lime</p>
-                            <p className="text-sm font-medium text-orange-600">To reduce acidity</p>
+                            <p className="font-bold text-orange-800">{t('soil_ph_add_lime_title')}</p>
+                            <p className="text-sm font-medium text-orange-600">{t('soil_ph_add_lime_desc')}</p>
                         </div>
                     </div>
                 )}
@@ -94,14 +94,14 @@ const Soil = () => {
                             <ShoppingBag className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="font-bold text-purple-800">Add Elemental Sulfur</p>
-                            <p className="text-sm font-medium text-purple-600">To reduce alkalinity</p>
+                            <p className="font-bold text-purple-800">{t('soil_ph_add_sulfur_title')}</p>
+                            <p className="text-sm font-medium text-purple-600">{t('soil_ph_add_sulfur_desc')}</p>
                         </div>
                     </div>
                 )}
                 {ph >= 5.5 && ph <= 7.5 && (
                     <div className="p-4 bg-brand-green-50 rounded-2xl flex items-center justify-center gap-2 border border-brand-green-100 text-brand-green-700 font-bold">
-                        Soil mix is perfectly balanced! 🎉
+                        {t('soil_balanced')}
                     </div>
                 )}
             </div>
