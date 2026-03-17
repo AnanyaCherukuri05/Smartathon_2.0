@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import PestResultCard from '../components/PestResultCard';
 
 const Pests = () => {
     const { t } = useTranslation();
@@ -27,11 +28,14 @@ const Pests = () => {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to analyze image');
+            if (!res.ok) {
+                const detailMessage = data?.details ? `${data.error}: ${data.details}` : data?.error;
+                throw new Error(detailMessage || 'Failed to analyze image');
+            }
 
             setResult({
                 status: 'analyzed',
-                analysis: data.analysis
+                data: data
             });
         } catch (err) {
             console.error(err);
@@ -102,35 +106,14 @@ const Pests = () => {
 
             {result && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
-                    {/* Result Card */}
-                    <div className="bg-amber-50 border border-amber-100 rounded-3xl p-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <ShieldCheck className="w-32 h-32 text-amber-600" />
-                        </div>
-
-                        <div className="flex flex-col gap-4 mb-2 relative z-10">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-brand-green-100 text-brand-green-600 rounded-2xl">
-                                    <ShieldCheck className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-xl font-extrabold text-slate-800">AI Diagnosis</h3>
-                            </div>
-                        </div>
-
-                        {/* Solution Card inside Result */}
-                        <div className="bg-white rounded-2xl p-5 shadow-sm relative z-10 mt-4">
-                            <p className="text-slate-700 font-medium text-lg leading-relaxed whitespace-pre-wrap">
-                                {result.analysis}
-                            </p>
-                        </div>
-                    </div>
+                    <PestResultCard result={result.data} />
 
                     <button
                         onClick={handleReset}
                         className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold active:scale-95 transition-transform flex justify-center items-center gap-2"
                     >
                         <RefreshCw className="w-5 h-5" />
-                        Scan Another Print
+                        Scan Another Leaf
                     </button>
                 </div>
             )}
