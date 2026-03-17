@@ -1,10 +1,9 @@
-import React, { useState, useRef } from 'react';
+cd D:\KisanSetu\Smartathon_2.0
+git rm -r --cached server/node_modules
+git rm -r --cached client/node_modulesgit add .import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Camera, Image as ImageIcon, ShieldCheck, RefreshCw } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
-import GradientButton from '../components/GradientButton';
-import SectionHeader from '../components/SectionHeader';
+import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import PestResultCard from '../components/PestResultCard';
 
 const Pests = () => {
     const { t } = useTranslation();
@@ -32,11 +31,14 @@ const Pests = () => {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to analyze image');
+            if (!res.ok) {
+                const detailMessage = data?.details ? `${data.error}: ${data.details}` : data?.error;
+                throw new Error(detailMessage || 'Failed to analyze image');
+            }
 
             setResult({
                 status: 'analyzed',
-                analysis: data.analysis
+                data: data
             });
         } catch (err) {
             console.error(err);
@@ -107,44 +109,17 @@ const Pests = () => {
             )}
 
             {result && (
-                <MotionDiv
-                    className="space-y-6"
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
-                    <GlassCard className="relative overflow-hidden p-6">
-                        <div className="absolute -right-8 -top-10 opacity-20">
-                            <ShieldCheck className="h-28 w-28 text-emerald-200" />
-                        </div>
-
-                        <div className="relative z-10 mb-2 flex items-center gap-3">
-                            <div className="rounded-2xl bg-emerald-300/20 p-3 text-emerald-200">
-                                <ShieldCheck className="h-7 w-7" />
-                            </div>
-                            <h3 className="text-display text-2xl font-semibold text-white">AI Diagnosis</h3>
-                        </div>
-
-                        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/40 p-5">
-                            <p className="whitespace-pre-wrap text-base font-medium leading-relaxed text-slate-100">
-                                {result.analysis}
-                            </p>
-                        </div>
-                    </GlassCard>
+                <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
+                    <PestResultCard result={result.data} />
 
                     <GradientButton
                         onClick={handleReset}
                         className="flex items-center justify-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.45)]"
                     >
-                        <RefreshCw className="h-5 w-5" />
-                        Scan Another Print
+                        <RefreshCw className="w-5 h-5" />
+                        Scan Another Leaf
                     </GradientButton>
-                </MotionDiv>
-            )}
-
-            {!isScanning && !result && !error && (
-                <GlassCard className="p-4 text-center">
-                    <p className="text-sm font-medium text-slate-300">No scans yet. Upload a photo to start diagnosis.</p>
-                </GlassCard>
+                </div>
             )}
 
         </div>

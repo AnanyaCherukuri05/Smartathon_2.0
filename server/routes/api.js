@@ -8,6 +8,8 @@ const multer = require('multer');
 
 const Crop = require('../models/Crop');
 const MarketPrice = require('../models/MarketPrice');
+const Pest = require('../models/Pest');
+const Treatment = require('../models/Treatment');
 
 dotenv.config();
 
@@ -253,6 +255,144 @@ Pest Detection (Gemini Vision)
 */
 const upload = multer({ storage: multer.memoryStorage() });
 
+<<<<<<< HEAD
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizePestName = (rawName = '') => {
+    return rawName
+        .replace(/^(identified\s*(pest|disease)?|pest|disease|diagnosis)\s*[:\-]\s*/i, '')
+        .replace(/\*/g, '')
+        .trim();
+};
+
+const extractGeminiText = (aiResponse) => {
+    if (aiResponse?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        return aiResponse.candidates[0].content.parts[0].text;
+    }
+
+    if (typeof aiResponse?.text === 'string' && aiResponse.text.trim()) {
+        return aiResponse.text;
+    }
+
+    throw new Error('Could not extract text from Gemini response');
+};
+
+const genericFallbackTreatment = {
+    pesticides: [
+        {
+            name: 'Neem Oil Spray',
+            activeIngredient: 'Azadirachtin 1500 ppm',
+            type: 'Organic',
+            dosage: { quantity: 3, unit: 'ml/liter' },
+            applicationMethod: 'Spray on both sides of leaves in early morning or late evening',
+            timingDaysSinceInfestation: 'Start immediately after first symptom',
+            sprayInterval: 'Repeat every 5-7 days',
+            maxApplications: 3,
+            efficiency: 65,
+            cost: 140,
+            marketBrand: ['Neem Gold', 'Nimbecidine']
+        }
+    ],
+    fertilizers: [
+        {
+            name: 'NPK 19:19:19 Water Soluble',
+            type: 'NPK',
+            dosage: { quantity: 1, unit: 'kg/acre' },
+            applicationMethod: 'Foliar spray',
+            timing: '2-3 days after pest control spray',
+            benefits: ['Supports stress recovery', 'Boosts leaf growth', 'Improves plant vigor']
+        }
+    ],
+    precautions: {
+        personalProtectiveEquipment: ['Gloves', 'Mask', 'Full sleeve clothing', 'Eye protection'],
+        storageInstructions: 'Store in original container away from food, children, and direct sunlight.',
+        toxicityLevel: 'Low',
+        waitingPeriodDays: 5,
+        environmentalCautions: ['Do not spray in strong wind', 'Avoid spraying near fish ponds'],
+        poisoningSymptoms: ['Skin irritation', 'Eye irritation'],
+        firstAidMeasures: 'Wash exposed skin with clean water and soap. If symptoms persist, seek medical help.',
+        notToMixWith: ['Strong alkaline solutions']
+    },
+    diseaseStage: 'Early',
+    effectiveness: 65,
+    costPerHectare: 350,
+    duration: '5-7 days'
+};
+
+const mapResponsePayload = (diagnosis, identifiedPest, pest, treatment, source, warning = null) => ({
+    diagnosis,
+    identifiedPest: pest ? pest.name : identifiedPest,
+    pestDetails: pest ? {
+        scientificName: pest.scientificName,
+        severity: pest.severity,
+        symptoms: pest.symptoms,
+        description: pest.description,
+        affectedCrops: pest.affectedCrops
+    } : null,
+    treatment: treatment ? {
+        pesticides: treatment.pesticides,
+        fertilizers: treatment.fertilizers,
+        precautions: treatment.precautions,
+        diseaseStage: treatment.diseaseStage,
+        effectiveness: treatment.effectiveness,
+        costPerHectare: treatment.costPerHectare,
+        duration: treatment.duration
+    } : null,
+    source,
+    warning
+});
+
+const getFallbackPayload = async (reason) => {
+    const fallbackDiagnosis = 'AI image analysis is temporarily unavailable.\nShowing preventive advisory so you can take safe immediate action.\nPlease verify symptoms before spraying and follow all precautions.';
+
+    try {
+        let fallbackTreatment = await Treatment.findOne({ pestName: 'Powdery Mildew' });
+        if (!fallbackTreatment) {
+            fallbackTreatment = await Treatment.findOne();
+        }
+
+        let fallbackPest = null;
+        if (fallbackTreatment?.pestId) {
+            fallbackPest = await Pest.findById(fallbackTreatment.pestId);
+        }
+
+        if (!fallbackPest && fallbackTreatment?.pestName) {
+            fallbackPest = await Pest.findOne({ name: fallbackTreatment.pestName });
+        }
+
+        if (fallbackTreatment) {
+            return mapResponsePayload(
+                fallbackDiagnosis,
+                fallbackPest?.name || 'General Crop Advisory',
+                fallbackPest,
+                fallbackTreatment,
+                'fallback',
+                reason
+            );
+        }
+    } catch (fallbackError) {
+        console.error('Fallback retrieval error:', fallbackError.message);
+    }
+
+    return mapResponsePayload(
+        fallbackDiagnosis,
+        'General Crop Advisory',
+        null,
+        genericFallbackTreatment,
+        'fallback',
+        reason
+    );
+};
+
+const getAdvisoryTreatmentRecord = async () => {
+    const preferred = await Treatment.findOne({ pestName: 'Powdery Mildew' });
+    if (preferred) return preferred;
+    return Treatment.findOne();
+};
+
+// Detect Pests using Gemini Vision + Database Recommendations
+=======
+>>>>>>> 569a6fc900f7eddf8a447b33351d06c1ec69aa72
 router.post('/pests/detect', upload.single('image'), async (req, res) => {
 
     try {
@@ -261,6 +401,92 @@ router.post('/pests/detect', upload.single('image'), async (req, res) => {
             return res.status(400).json({ error: "Image required" });
         }
 
+<<<<<<< HEAD
+        const mimeType = req.file.mimetype;
+        const base64Data = req.file.buffer.toString("base64");
+
+        if (!ai) {
+            const fallbackPayload = await getFallbackPayload('Gemini API not configured');
+            return res.json(fallbackPayload);
+        }
+
+        let analysisText = '';
+
+        try {
+            // First, get AI analysis to identify the pest
+            const aiResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [
+                    {
+                        inlineData: {
+                            data: base64Data,
+                            mimeType: mimeType
+                        }
+                    },
+                    `Analyze this crop image for pests, diseases, or deficiencies. 
+                    Return ONLY the name of the identified disease/pest in the first line (e.g., "Powdery Mildew" or "Fall Armyworm").
+                    Then on the next line, provide a simple 2-sentence diagnosis.
+                    Then provide 1 actionable immediate suggestion.
+                    Use simple words that farmers can understand. Include relevant emojis.`
+                ]
+            });
+
+            analysisText = extractGeminiText(aiResponse);
+        } catch (aiError) {
+            console.error('Gemini service error. Using fallback:', aiError.message);
+            const fallbackPayload = await getFallbackPayload(aiError.message);
+            return res.json(fallbackPayload);
+        }
+
+        const lines = analysisText.split('\n').filter(line => line.trim());
+        const identifiedPest = normalizePestName(lines[0] || 'Unknown') || 'Unknown';
+
+        // Search for matching pest in database (case-insensitive)
+        const safePattern = escapeRegex(identifiedPest.split('(')[0].trim());
+        let pest = null;
+
+        if (safePattern) {
+            pest = await Pest.findOne({
+                name: { $regex: new RegExp(safePattern, 'i') }
+            });
+        }
+
+        // Secondary fuzzy match if exact regex does not find a record
+        if (!pest && identifiedPest !== 'Unknown') {
+            const allPests = await Pest.find();
+            const normalizedDetected = identifiedPest.toLowerCase();
+            pest = allPests.find((item) => {
+                const normalizedName = item.name.toLowerCase();
+                return normalizedDetected.includes(normalizedName) || normalizedName.includes(normalizedDetected);
+            }) || null;
+        }
+
+        let treatment = null;
+        if (pest) {
+            treatment = await Treatment.findOne({ pestId: pest._id }) || await Treatment.findOne({ pestName: pest.name });
+        }
+
+        let source = 'ai';
+        let warning = null;
+
+        if (!treatment) {
+            const advisoryTreatment = await getAdvisoryTreatmentRecord();
+            treatment = advisoryTreatment || genericFallbackTreatment;
+            source = 'advisory';
+
+            warning = pest
+                ? 'Exact treatment for detected disease is not available yet. Showing safe preventive advisory.'
+                : 'Detected disease could not be matched confidently. Showing safe preventive advisory.';
+
+            analysisText = `${analysisText}\n\nAdvisory note: Use the dosage and safety section below carefully. Consult local agriculture officer before repeating spray.`;
+        }
+
+        res.json(mapResponsePayload(analysisText, identifiedPest, pest, treatment, source, warning));
+    } catch (error) {
+        console.error("Pest Detection Error:", error.message);
+        const fallbackPayload = await getFallbackPayload(error.message);
+        res.json(fallbackPayload);
+=======
         if (!ai) {
             return res.status(500).json({ error: "Gemini not configured" });
         }
@@ -287,6 +513,7 @@ router.post('/pests/detect', upload.single('image'), async (req, res) => {
     } catch (error) {
         console.error("Vision error:", error.message);
         res.status(500).json({ error: "Image analysis failed" });
+>>>>>>> 569a6fc900f7eddf8a447b33351d06c1ec69aa72
     }
 });
 
