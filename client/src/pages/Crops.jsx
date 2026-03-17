@@ -45,12 +45,16 @@ const Crops = () => {
     const RecIcon = recommendation ? (iconsRef[recommendation.iconName] || Leaf) : Leaf;
 
     return (
-        <div className="space-y-8 pb-10">
-            <SectionHeader title={`${t('crops')} ${t('recommendation')}`} subtitle="Choose soil and season to get tailored advice" />
+        <div className="page-reveal space-y-8 pb-10">
+            <SectionHeader
+                eyebrow="Decision Support"
+                title={`${t('crops')} ${t('recommendation')}`}
+                subtitle="Choose soil and season to get tailored advice in one tap."
+            />
 
-            <GlassCard className="space-y-4 p-5">
-                <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-100 text-sm text-green-600">1</span>
+            <GlassCard className="space-y-4 border-emerald-100/80 p-5">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-sm text-emerald-700">1</span>
                     Select Soil
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
@@ -59,7 +63,7 @@ const Crops = () => {
                             type="button"
                             key={s.id}
                             onClick={() => { setSelectedSoil(s.id); setRecommendation(null); }}
-                            className={`flex flex-col items-center justify-center rounded-xl border p-4 transition-shadow duration-200 ${s.color} ${selectedSoil === s.id ? 'ring-2 ring-green-500 shadow-md' : 'hover:shadow-md'}`}
+                            className={`flex flex-col items-center justify-center rounded-2xl border p-4 transition-all duration-200 ${s.color} ${selectedSoil === s.id ? 'ring-4 ring-emerald-100 shadow-[0_10px_22px_rgba(28,123,74,0.2)]' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
                         >
                             <s.icon className="w-8 h-8 mb-2" />
                             <span className="font-bold text-sm">{s.label}</span>
@@ -68,9 +72,9 @@ const Crops = () => {
                 </div>
             </GlassCard>
 
-            <GlassCard className="space-y-4 p-5">
-                <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-100 text-sm text-green-600">2</span>
+            <GlassCard className="space-y-4 border-emerald-100/80 p-5">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-sm text-emerald-700">2</span>
                     Select Season
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
@@ -79,7 +83,7 @@ const Crops = () => {
                             type="button"
                             key={s.id}
                             onClick={() => { setSelectedSeason(s.id); setRecommendation(null); }}
-                            className={`flex flex-col items-center justify-center rounded-xl border p-4 transition-shadow duration-200 ${s.color} ${selectedSeason === s.id ? 'ring-2 ring-green-500 shadow-md' : 'hover:shadow-md'}`}
+                            className={`flex flex-col items-center justify-center rounded-2xl border p-4 transition-all duration-200 ${s.color} ${selectedSeason === s.id ? 'ring-4 ring-emerald-100 shadow-[0_10px_22px_rgba(28,123,74,0.2)]' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
                         >
                             <s.icon className="w-8 h-8 mb-2" />
                             <span className="font-bold text-sm">{s.label}</span>
@@ -99,21 +103,21 @@ const Crops = () => {
 
             {recommendation && (
                 <div className="mt-8">
-                    <GlassCard className="p-8 text-center">
+                    <GlassCard className="border-emerald-100/80 p-8 text-center">
                         <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
-                            {selectedSoil ? <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-green-700">{selectedSoil}</span> : null}
-                            {selectedSeason ? <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-green-700">{selectedSeason}</span> : null}
-                            <span className="rounded-full bg-green-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">Recommended Crop</span>
+                            {selectedSoil ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">{selectedSoil}</span> : null}
+                            {selectedSeason ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">{selectedSeason}</span> : null}
+                            <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">Recommended Crop</span>
                         </div>
-                        <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-xl bg-green-100 text-green-600">
+                        <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
                             <RecIcon className="h-16 w-16 drop-shadow-sm" />
                         </div>
-                        <h3 className="text-display mb-2 text-3xl font-semibold text-green-600">{recommendation.name}</h3>
-                        <p className="mb-4 text-sm font-medium text-gray-600">Best match for your selection</p>
+                        <h3 className="text-display mb-2 text-3xl font-semibold text-emerald-700">{recommendation.name}</h3>
+                        <p className="mb-4 text-sm font-medium text-slate-600">Best match for your selection</p>
 
                         {recommendation.aiExplanation && (
-                            <div className="flex w-full items-start gap-3 rounded-xl border border-green-100 bg-green-50 p-4 text-left font-medium text-gray-700">
-                                <Sprout className="h-6 w-6 shrink-0 text-green-600" />
+                            <div className="flex w-full items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-left font-medium text-slate-700">
+                                <Sprout className="h-6 w-6 shrink-0 text-emerald-700" />
                                 <p className="leading-relaxed">{recommendation.aiExplanation}</p>
                             </div>
                         )}
@@ -122,8 +126,8 @@ const Crops = () => {
             )}
 
             {!loading && !recommendation && (
-                <GlassCard className="p-4 text-center">
-                    <p className="text-sm font-medium text-gray-600">No recommendation yet. Select soil and season to get started.</p>
+                <GlassCard className="border-emerald-100/80 p-4 text-center">
+                    <p className="text-sm font-medium text-slate-600">No recommendation yet. Select soil and season to get started.</p>
                 </GlassCard>
             )}
 

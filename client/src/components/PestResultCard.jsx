@@ -46,6 +46,18 @@ const PestResultCard = ({ result }) => {
             return 'AI usage limit reached temporarily. Showing preventive advisory mode.';
         }
 
+        if (value.includes('high demand') || value.includes('busy') || value.includes('unavailable')) {
+            return 'AI service is busy right now. Please try again in a few seconds.';
+        }
+
+        if (value.includes('database') || value.includes('mongodb')) {
+            return 'Treatment database is temporarily unavailable. Showing safe preventive advisory.';
+        }
+
+        if (value.includes('clear jpg') || value.includes('clear png') || value.includes('image could not be processed')) {
+            return 'Please upload a clearer crop photo in JPG/PNG for better detection.';
+        }
+
         return warning;
     };
 

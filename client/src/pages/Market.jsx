@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, Wheat, Leaf, Sprout, Cloud, Loader2, BarChart2, Sparkles } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { apiFetch } from '../lib/apiClient';
+import GlassCard from '../components/GlassCard';
+import SectionHeader from '../components/SectionHeader';
 
 const iconsRef = { Wheat, Leaf, Sprout, Cloud };
 
@@ -56,7 +58,7 @@ const Market = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 text-brand-green-600">
+            <div className="page-reveal flex h-64 flex-col items-center justify-center text-brand-green-600">
                 <Loader2 className="w-12 h-12 animate-spin mb-4" />
                 <p className="font-bold">{t('market_loading')}</p>
             </div>
@@ -82,18 +84,24 @@ const Market = () => {
     ];
 
     return (
-        <div className="space-y-6 pb-10">
+        <div className="page-reveal space-y-6 pb-10">
 
-            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                <BarChart2 className="w-6 h-6 text-brand-green-600" />
-                {t('market_title')}
-            </h2>
+            <SectionHeader
+                eyebrow="Market Intelligence"
+                title={(
+                    <span className="inline-flex items-center gap-2">
+                        <BarChart2 className="h-6 w-6 text-brand-green-600" />
+                        {t('market_title')}
+                    </span>
+                )}
+                subtitle="Compare live prices, trend momentum, and AI-based crop profit outlook."
+            />
 
             {/* AI PROFIT PREDICTION CARD */}
 
             {prediction?.recommendedCrop && (
 
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 rounded-3xl shadow-lg">
+                <GlassCard className="overflow-hidden border-emerald-100/80 bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
 
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-6 h-6" />
@@ -120,13 +128,13 @@ const Market = () => {
                         </p>
                     )}
 
-                </div>
+                </GlassCard>
 
             )}
 
             {/* Market Trend Chart */}
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <GlassCard className="border-emerald-100/80 p-6">
 
                 <h3 className="text-lg font-bold text-slate-800 mb-1">
                     Weekly Market Trend
@@ -164,7 +172,7 @@ const Market = () => {
 
                 </div>
 
-            </div>
+            </GlassCard>
 
             {/* CURRENT MARKET PRICES */}
 
@@ -176,7 +184,7 @@ const Market = () => {
 
                     return (
 
-                        <div key={index} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+                        <GlassCard key={index} className="flex items-center gap-4 border-emerald-100/80 p-5">
 
                             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${item.colorClass}`}>
                                 <IconComp className="w-8 h-8" />
@@ -208,7 +216,7 @@ const Market = () => {
 
                             </div>
 
-                        </div>
+                        </GlassCard>
 
                     );
 

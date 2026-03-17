@@ -13,8 +13,8 @@ const GlassCard = ({
     return (
         <Component
             className={clsx(
-                'rounded-xl border border-green-100 bg-white shadow-md',
-                hover && 'transition-shadow duration-200 hover:shadow-lg',
+                'glass-surface card-neuro rounded-2xl',
+                hover && 'transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(16,56,38,0.16)]',
                 className,
             )}
             {...props}
