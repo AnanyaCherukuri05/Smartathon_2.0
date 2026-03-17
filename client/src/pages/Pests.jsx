@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import { normalizeLanguageCode } from '../lib/languages';
 
 const Pests = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [isScanning, setIsScanning] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
@@ -19,6 +20,7 @@ const Pests = () => {
 
         const formData = new FormData();
         formData.append('image', file);
+        formData.append('lang', normalizeLanguageCode(i18n.language));
 
         try {
             const res = await fetch('http://localhost:5000/api/pests/detect', {
@@ -55,15 +57,15 @@ const Pests = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
-            <h2 className="text-2xl font-bold text-slate-800">{t('pests')} Detection</h2>
+            <h2 className="text-2xl font-bold text-slate-800">{t('pests_detection_title')}</h2>
 
             {!isScanning && !result && (
                 <div className="flex flex-col items-center justify-center p-8 bg-white border-2 border-dashed border-brand-green-200 rounded-3xl mt-12 shadow-sm min-h-[300px]">
                     <div className="w-24 h-24 bg-brand-green-50 rounded-full flex items-center justify-center mb-6 text-brand-green-600">
                         <Camera className="w-12 h-12" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2 text-center">Take a photo of your crop</h3>
-                    <p className="text-slate-500 text-center mb-8 font-medium">To identify pests or diseases automatically</p>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 text-center">{t('pests_take_photo_title')}</h3>
+                    <p className="text-slate-500 text-center mb-8 font-medium">{t('pests_take_photo_subtitle')}</p>
 
                     <input
                         type="file"
@@ -77,7 +79,7 @@ const Pests = () => {
                         className="w-full py-4 rounded-full bg-brand-green-600 text-white font-bold text-lg shadow-lg shadow-brand-green-600/30 active:scale-95 transition-transform flex justify-center items-center gap-2"
                     >
                         <ImageIcon className="w-6 h-6" />
-                        Upload Photo
+                        {t('pests_upload_photo')}
                     </button>
                 </div>
             )}
@@ -89,8 +91,8 @@ const Pests = () => {
                         <div className="absolute inset-0 border-4 border-brand-green-500 rounded-full border-t-transparent animate-spin"></div>
                         <Camera className="w-12 h-12 text-brand-green-600 animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800 animate-pulse">Scanning Image...</h3>
-                    <p className="text-slate-500 mt-2 font-medium">Analyzing leaves for pests</p>
+                    <h3 className="text-xl font-bold text-slate-800 animate-pulse">{t('pests_scanning_title')}</h3>
+                    <p className="text-slate-500 mt-2 font-medium">{t('pests_scanning_subtitle')}</p>
                 </div>
             )}
 
@@ -113,7 +115,7 @@ const Pests = () => {
                                 <div className="p-3 bg-brand-green-100 text-brand-green-600 rounded-2xl">
                                     <ShieldCheck className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-xl font-extrabold text-slate-800">AI Diagnosis</h3>
+                                <h3 className="text-xl font-extrabold text-slate-800">{t('pests_ai_diagnosis')}</h3>
                             </div>
                         </div>
 
@@ -130,7 +132,7 @@ const Pests = () => {
                         className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold active:scale-95 transition-transform flex justify-center items-center gap-2"
                     >
                         <RefreshCw className="w-5 h-5" />
-                        Scan Another Print
+                        {t('pests_scan_another')}
                     </button>
                 </div>
             )}

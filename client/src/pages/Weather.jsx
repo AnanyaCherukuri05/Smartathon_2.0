@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudRain, Sun, Cloud, AlertTriangle, Droplets, MapPin, Loader2 } from 'lucide-react';
+import { normalizeLanguageCode } from '../lib/languages';
 
 const Weather = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [weatherData, setWeatherData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -11,7 +12,8 @@ const Weather = () => {
     const fetchWeather = async (lat = 28.6139, lon = 77.2090) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/weather?lat=${lat}&lon=${lon}`);
+            const lang = normalizeLanguageCode(i18n.language);
+            const res = await fetch(`http://localhost:5000/api/weather?lat=${lat}&lon=${lon}&lang=${lang}`);
             const data = await res.json();
             setWeatherData(data);
         } catch (error) {
@@ -22,8 +24,9 @@ const Weather = () => {
     };
 
     useEffect(() => {
-        fetchWeather(); // Fetch default on mount
-    }, []);
+        fetchWeather(); // Fetch default on mount and when language changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [i18n.language]);
 
     const handleGetLocation = () => {
         if (navigator.geolocation) {
@@ -45,19 +48,19 @@ const Weather = () => {
 
     const getAdvisory = (code) => {
         if (code >= 500 && code < 600) {
-            return { msg: 'Avoid spraying 🚫', action: 'Do not water crops today 🌧️', alert: true };
+            return { msg: t('weather_avoid_spraying'), action: t('weather_do_not_water_today'), alert: true };
         }
         if (code === 800) {
-            return { msg: 'Good time to spray ✅', action: 'Water crops today 💧', alert: false };
+            return { msg: t('weather_good_time_spray'), action: t('weather_water_today'), alert: false };
         }
-        return { msg: 'Normal conditions ✅', action: 'Standard watering 💧', alert: false };
+        return { msg: t('weather_normal_conditions'), action: t('weather_standard_watering'), alert: false };
     };
 
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-brand-green-600">
                 <Loader2 className="w-12 h-12 animate-spin mb-4" />
-                <p className="font-bold">Loading Weather...</p>
+                <p className="font-bold">{t('weather_loading')}</p>
             </div>
         );
     }
@@ -88,7 +91,7 @@ const Weather = () => {
                 </div>
 
                 <p className="text-lg font-medium text-slate-600 mt-2 capitalize flex items-center gap-2">
-                    {current?.description || 'Clear'} | Wind: {Math.round(current?.wind_speed || 0)} km/h
+                    {current?.description || t('weather_clear')} | {t('weather_wind')}: {Math.round(current?.wind_speed || 0)} km/h
                 </p>
             </div>
 

@@ -10,7 +10,7 @@ const Layout = () => {
             <TopBar />
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto pb-24 pt-4 px-4">
+            <main className="flex-1 overflow-y-auto pb-24 pt-3 px-4">
                 <Outlet />
             </main>
 

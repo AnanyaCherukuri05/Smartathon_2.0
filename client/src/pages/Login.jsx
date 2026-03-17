@@ -27,7 +27,7 @@ const Login = () => {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Login failed');
+            if (!res.ok) throw new Error(data.error || t('login_failed'));
 
             login(data.user, data.token);
             navigate('/');
@@ -66,7 +66,7 @@ const Login = () => {
                             onChange={(e) => setPhone(e.target.value)}
                             required
                             className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg transition-all"
-                            placeholder="Enter mobile number"
+                            placeholder={t('phone_placeholder_login')}
                         />
                     </div>
 
@@ -77,7 +77,7 @@ const Login = () => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg transition-all"
-                            placeholder="Name (Optional for Login)"
+                            placeholder={t('name_placeholder_login')}
                         />
                     </div>
 

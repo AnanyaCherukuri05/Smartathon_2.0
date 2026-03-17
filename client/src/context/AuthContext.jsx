@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguageCode } from '../lib/languages';
 
 export const AuthContext = createContext();
 
@@ -15,7 +16,7 @@ export const AuthProvider = ({ children }) => {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
             if (parsedUser.languagePreference) {
-                i18n.changeLanguage(parsedUser.languagePreference);
+                i18n.changeLanguage(normalizeLanguageCode(parsedUser.languagePreference));
             }
         }
         setLoading(false);
@@ -26,7 +27,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', token);
         if (userData.languagePreference) {
-            i18n.changeLanguage(userData.languagePreference);
+            i18n.changeLanguage(normalizeLanguageCode(userData.languagePreference));
         }
     };
 
@@ -37,11 +38,12 @@ export const AuthProvider = ({ children }) => {
     };
 
     const setLanguagePreference = (languageCode) => {
-        i18n.changeLanguage(languageCode);
+        const normalized = normalizeLanguageCode(languageCode);
+        i18n.changeLanguage(normalized);
 
         setUser((prevUser) => {
             if (!prevUser) return prevUser;
-            const nextUser = { ...prevUser, languagePreference: languageCode };
+            const nextUser = { ...prevUser, languagePreference: normalized };
             localStorage.setItem('user', JSON.stringify(nextUser));
             return nextUser;
         });

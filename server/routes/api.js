@@ -8,6 +8,11 @@ const multer = require('multer');
 const Crop = require('../models/Crop');
 const MarketPrice = require('../models/MarketPrice');
 
+const normalizeLang = (lang) => {
+    if (!lang) return 'en';
+    return String(lang).toLowerCase().split('-')[0];
+};
+
 dotenv.config();
 
 // Initialize Gemini API
@@ -17,12 +22,16 @@ const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GE
 router.get('/weather', async (req, res) => {
     try {
         const { lat = 28.6139, lon = 77.2090 } = req.query;
+        const lang = normalizeLang(req.query.lang);
         const apiKey = process.env.WEATHER_API_KEY;
 
         if (!apiKey) throw new Error("Missing OpenWeather API Key");
 
         // Fetch from OpenWeather
-        const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`);
+        // OpenWeather supports `lang=...` for localized description.
+        const response = await axios.get(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${encodeURIComponent(lang)}`
+        );
         const data = response.data;
 
         // Map OpenWeather format to our app's visual needs
@@ -43,6 +52,7 @@ router.get('/weather', async (req, res) => {
 router.get('/recommendations', async (req, res) => {
     try {
         const { soil, season } = req.query;
+        const lang = normalizeLang(req.query.lang);
         let crop = await Crop.findOne({ soilType: soil, season: season });
 
         // If we have Gemini setup, try to get a smart recommendation explanation
@@ -50,7 +60,7 @@ router.get('/recommendations', async (req, res) => {
             try {
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
-                    contents: `Act as a helpful farming assistant. The user has ${soil} soil and the season is ${season}. We are recommending ${crop.name}. Give a 1 sentence simple reason why this is a good crop. Farmers with low literacy should understand it easily. No complex words.`
+                    contents: `Act as a helpful farming assistant. Respond ONLY in the language with code: ${lang}. The user has ${soil} soil and the season is ${season}. We are recommending ${crop.name}. Give a 1 sentence simple reason why this is a good crop. Farmers with low literacy should understand it easily. No complex words.`
                 });
 
                 return res.json({
@@ -109,6 +119,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Detect Pests using Gemini Vision
 router.post('/pests/detect', upload.single('image'), async (req, res) => {
     try {
+            const lang = normalizeLang(req.body?.lang);
         if (!req.file) {
             return res.status(400).json({ error: 'No image uploaded' });
         }
@@ -129,7 +140,7 @@ router.post('/pests/detect', upload.single('image'), async (req, res) => {
                         mimeType: mimeType
                     }
                 },
-                "Analyze this crop image. Identify any visible pests, diseases, or deficiencies. Provide a very simple, short 2-sentence diagnosis and 1 actionable suggestion for a farmer. Keep words extremely simple and use emojis."
+                `Analyze this crop image. Respond ONLY in the language with code: ${lang}. Identify any visible pests, diseases, or deficiencies. Provide a very simple, short 2-sentence diagnosis and 1 actionable suggestion for a farmer. Keep words extremely simple and use emojis.`
             ]
         });
 

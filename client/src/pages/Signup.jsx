@@ -29,7 +29,7 @@ const Signup = () => {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Signup failed');
+            if (!res.ok) throw new Error(data.error || t('signup_failed'));
 
             login(data.user, data.token);
             navigate('/');
@@ -68,7 +68,7 @@ const Signup = () => {
                             onChange={(e) => setPhone(e.target.value)}
                             required
                             className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg transition-all"
-                            placeholder="Mobile number"
+                            placeholder={t('phone_placeholder_signup')}
                         />
                     </div>
 
@@ -80,7 +80,7 @@ const Signup = () => {
                             onChange={(e) => setName(e.target.value)}
                             required
                             className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg transition-all"
-                            placeholder="Full name"
+                            placeholder={t('name_placeholder_signup')}
                         />
                     </div>
 
