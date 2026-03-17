@@ -31,6 +31,24 @@ const PestResultCard = ({ result }) => {
         }));
     };
 
+    const getFriendlyWarning = (warning) => {
+        const value = String(warning || '').toLowerCase();
+
+        if (!value.trim()) {
+            return 'AI service is temporarily unavailable. Showing preventive advisory mode.';
+        }
+
+        if (value.includes('reported as leaked') || value.includes('permission_denied') || value.includes('api key')) {
+            return 'AI key issue detected. Add a valid Gemini key in server .env and restart backend.';
+        }
+
+        if (value.includes('quota') || value.includes('rate limit')) {
+            return 'AI usage limit reached temporarily. Showing preventive advisory mode.';
+        }
+
+        return warning;
+    };
+
     if (!result) return null;
 
     const getSeverityColor = (severity) => {
@@ -64,7 +82,7 @@ const PestResultCard = ({ result }) => {
                             ? 'AI service is temporarily unavailable. Showing preventive advisory mode.'
                             : 'Exact disease treatment match not found. Showing preventive advisory mode.'}
                     </p>
-                    <p className="text-amber-700 text-sm mt-1 break-words">Reason: {result.warning}</p>
+                    <p className="text-amber-700 text-sm mt-1 break-words">{getFriendlyWarning(result.warning)}</p>
                 </div>
             )}
 
