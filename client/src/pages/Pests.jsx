@@ -1,9 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Image as ImageIcon, ShieldCheck, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import PestResultCard from '../components/PestResultCard';
+import SectionHeader from '../components/SectionHeader';
 import GlassCard from '../components/GlassCard';
 import GradientButton from '../components/GradientButton';
-import SectionHeader from '../components/SectionHeader';
+import { apiFetch } from '../lib/apiClient';
 
 const Pests = () => {
     const { t } = useTranslation();
@@ -24,17 +28,15 @@ const Pests = () => {
         formData.append('image', file);
 
         try {
-            const res = await fetch('http://localhost:5000/api/pests/detect', {
+            const data = await apiFetch('/api/pests/detect', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                auth: false
             });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to analyze image');
 
             setResult({
                 status: 'analyzed',
-                analysis: data.analysis
+                data: data
             });
         } catch (err) {
             console.error(err);
@@ -110,6 +112,7 @@ const Pests = () => {
             )}
 
             {result && (
+
                 <div className="space-y-6">
                     <GlassCard className="p-6">
                         <div className="mb-4 grid grid-cols-3 gap-3">
@@ -135,6 +138,9 @@ const Pests = () => {
                         </div>
                     </GlassCard>
 
+                <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
+                    <PestResultCard result={result.data} />
+
                     <GradientButton
                         onClick={handleReset}
                         className="flex items-center justify-center gap-2"
@@ -149,6 +155,10 @@ const Pests = () => {
                 <GlassCard className="p-4 text-center">
                     <p className="text-sm font-medium text-gray-600">No scans yet. Upload a photo to start diagnosis.</p>
                 </GlassCard>
+                        <RefreshCw className="w-5 h-5" />
+                        Scan Another Leaf
+                    </GradientButton>
+                </div>
             )}
 
         </div>

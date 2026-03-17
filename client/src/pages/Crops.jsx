@@ -4,6 +4,7 @@ import { Sun, CloudRain, Snowflake, Droplets, Mountain, Sprout, Leaf, Wheat, Clo
 import GlassCard from '../components/GlassCard';
 import GradientButton from '../components/GradientButton';
 import SectionHeader from '../components/SectionHeader';
+import { apiFetch } from '../lib/apiClient';
 
 const iconsRef = { Wheat, Leaf, Sprout, Cloud };
 
@@ -26,20 +27,19 @@ const Crops = () => {
         { id: 'winter', icon: Snowflake, label: 'Winter', color: 'bg-green-50 text-green-700 border-green-200' },
     ];
 
-    const handleRecommend = () => {
+    const handleRecommend = async () => {
         if (!selectedSoil || !selectedSeason) return;
         setLoading(true);
 
-        fetch(`http://localhost:5000/api/recommendations?soil=${selectedSoil}&season=${selectedSeason}`)
-            .then(res => res.json())
-            .then(data => {
-                setRecommendation(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
+        try {
+            const data = await apiFetch(`/api/recommendations?soil=${selectedSoil}&season=${selectedSeason}`, { auth: false });
+            setRecommendation(data);
+        } catch (err) {
+            console.error(err);
+            setRecommendation(null);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const RecIcon = recommendation ? (iconsRef[recommendation.iconName] || Leaf) : Leaf;
