@@ -6,8 +6,6 @@ const dotenv = require("dotenv");
 const { GoogleGenAI } = require("@google/genai");
 const multer = require("multer");
 
-const requireAuth = require("../middleware/requireAuth"); // optional
-
 const Crop = require("../models/Crop");
 const Pest = require("../models/Pest");
 const Treatment = require("../models/Treatment");
@@ -23,7 +21,7 @@ Gemini AI Initialization
 let ai = null;
 
 const geminiApiKey =
-  process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  process.env.GEMINI_API_KEY;
 
 if (geminiApiKey) {
   try {
@@ -321,7 +319,12 @@ router.post("/chat", async (req, res) => {
       });
     }
 
-    const messages = req.body.messages || [];
+    const body = req.body || {};
+    const messages = Array.isArray(body.messages)
+      ? body.messages
+      : typeof body.message === "string"
+        ? [{ role: "user", content: body.message }]
+        : [];
 
     const transcript = messages
       .map((m) => `${m.role}: ${m.content}`)
