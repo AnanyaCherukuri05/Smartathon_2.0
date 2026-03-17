@@ -12,17 +12,12 @@ const ActionCard = ({ title, icon: Icon, colorClass, path, description }) => {
             as="button"
             hover
             onClick={() => navigate(path)}
-            whileTap={{ scale: 0.98 }}
-            className="group w-full p-6 text-left"
+            className="flex flex-col items-center justify-center p-4 sm:p-6 bg-white rounded-3xl shadow-sm border border-slate-100/50 hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-300 w-full group"
         >
-            <MotionDiv
-                className={`mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/30 transition-transform group-hover:-translate-y-1 ${colorClass}`}
-                whileHover={{ rotate: -4 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-            >
-                {React.createElement(Icon, { className: 'h-8 w-8' })}
-            </MotionDiv>
-            <h3 className="text-display text-xl font-semibold text-white">{title}</h3>
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover:-translate-y-1 ${colorClass}`}>
+                <Icon className="w-8 h-8 sm:w-10 sm:h-10" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-800">{title}</h3>
             {description && (
                 <p className="mt-1 text-sm font-medium text-slate-300">{description}</p>
             )}

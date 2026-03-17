@@ -9,6 +9,11 @@ const multer = require('multer');
 const Crop = require('../models/Crop');
 const MarketPrice = require('../models/MarketPrice');
 
+const normalizeLang = (lang) => {
+    if (!lang) return 'en';
+    return String(lang).toLowerCase().split('-')[0];
+};
+
 dotenv.config();
 
 /*
@@ -50,6 +55,7 @@ Weather by Coordinates
 router.get('/weather', async (req, res) => {
     try {
         const { lat = 28.6139, lon = 77.2090 } = req.query;
+        const lang = normalizeLang(req.query.lang);
         const apiKey = process.env.WEATHER_API_KEY;
 
         if (!apiKey) {
@@ -105,6 +111,11 @@ router.get('/weather/:city', async (req, res) => {
             }
         );
 
+        // Fetch from OpenWeather
+        // OpenWeather supports `lang=...` for localized description.
+        const response = await axios.get(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=${encodeURIComponent(lang)}`
+        );
         const data = response.data;
 
         res.json({
@@ -136,6 +147,8 @@ router.get('/recommendations', async (req, res) => {
     try {
 
         const { soil, season } = req.query;
+        const lang = normalizeLang(req.query.lang);
+        let crop = await Crop.findOne({ soilType: soil, season: season });
 
         let crop = null;
 
@@ -153,10 +166,9 @@ router.get('/recommendations', async (req, res) => {
 
         if (ai) {
             try {
-
-                const aiResponse = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
-                    contents: `Farmer has ${soil} soil and season is ${season}. Recommend ${cropPayload.name}. Explain in 1 simple sentence for a farmer.`
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: `Act as a helpful farming assistant. Respond ONLY in the language with code: ${lang}. The user has ${soil} soil and the season is ${season}. We are recommending ${crop.name}. Give a 1 sentence simple reason why this is a good crop. Farmers with low literacy should understand it easily. No complex words.`
                 });
 
                 return res.json({
@@ -256,7 +268,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post('/pests/detect', upload.single('image'), async (req, res) => {
 
     try {
-
+            const lang = normalizeLang(req.body?.lang);
         if (!req.file) {
             return res.status(400).json({ error: "Image required" });
         }
@@ -276,7 +288,7 @@ router.post('/pests/detect', upload.single('image'), async (req, res) => {
                         mimeType: req.file.mimetype
                     }
                 },
-                "Identify pest or disease. Give short diagnosis and simple farmer advice."
+                `Analyze this crop image. Respond ONLY in the language with code: ${lang}. Identify any visible pests, diseases, or deficiencies. Provide a very simple, short 2-sentence diagnosis and 1 actionable suggestion for a farmer. Keep words extremely simple and use emojis.`
             ]
         });
 

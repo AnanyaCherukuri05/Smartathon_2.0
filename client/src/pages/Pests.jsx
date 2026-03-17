@@ -1,14 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Camera, Image as ImageIcon, ShieldCheck, RefreshCw } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
-import GradientButton from '../components/GradientButton';
-import SectionHeader from '../components/SectionHeader';
+import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import { normalizeLanguageCode } from '../lib/languages';
 
 const Pests = () => {
-    const { t } = useTranslation();
-    const MotionDiv = motion.div;
+    const { t, i18n } = useTranslation();
     const [isScanning, setIsScanning] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
@@ -24,6 +20,7 @@ const Pests = () => {
 
         const formData = new FormData();
         formData.append('image', file);
+        formData.append('lang', normalizeLanguageCode(i18n.language));
 
         try {
             const res = await fetch('http://localhost:5000/api/pests/detect', {
@@ -59,20 +56,16 @@ const Pests = () => {
     };
 
     return (
-        <div className="space-y-6 pb-10">
-            <SectionHeader title={`${t('pests')} Detection`} subtitle="Upload a crop image for AI analysis" />
+        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
+            <h2 className="text-2xl font-bold text-slate-800">{t('pests_detection_title')}</h2>
 
             {!isScanning && !result && (
-                <GlassCard className="card-neuro mt-8 border-dashed p-8 text-center">
-                    <MotionDiv
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-emerald-200/35 bg-emerald-400/15 text-emerald-200"
-                    >
-                        <Camera className="h-12 w-12" />
-                    </MotionDiv>
-                    <h3 className="text-display mb-2 text-2xl font-semibold text-white">Take a photo of your crop</h3>
-                    <p className="mb-8 text-sm font-medium text-slate-300">To identify pests or diseases automatically</p>
+                <div className="flex flex-col items-center justify-center p-8 bg-white border-2 border-dashed border-brand-green-200 rounded-3xl mt-12 shadow-sm min-h-[300px]">
+                    <div className="w-24 h-24 bg-brand-green-50 rounded-full flex items-center justify-center mb-6 text-brand-green-600">
+                        <Camera className="w-12 h-12" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 text-center">{t('pests_take_photo_title')}</h3>
+                    <p className="text-slate-500 text-center mb-8 font-medium">{t('pests_take_photo_subtitle')}</p>
 
                     <input
                         type="file"
@@ -81,11 +74,14 @@ const Pests = () => {
                         ref={fileInputRef}
                         onChange={handleFileChange}
                     />
-                    <GradientButton onClick={handleUploadClick} className="mx-auto flex max-w-xs items-center justify-center gap-2 py-3">
-                        <ImageIcon className="h-5 w-5" />
-                        Upload Photo
-                    </GradientButton>
-                </GlassCard>
+                    <button
+                        onClick={handleUploadClick}
+                        className="w-full py-4 rounded-full bg-brand-green-600 text-white font-bold text-lg shadow-lg shadow-brand-green-600/30 active:scale-95 transition-transform flex justify-center items-center gap-2"
+                    >
+                        <ImageIcon className="w-6 h-6" />
+                        {t('pests_upload_photo')}
+                    </button>
+                </div>
             )}
 
             {isScanning && (
@@ -95,9 +91,9 @@ const Pests = () => {
                         <div className="absolute inset-0 animate-spin rounded-full border-4 border-emerald-300 border-t-transparent"></div>
                         <Camera className="h-12 w-12 animate-pulse text-emerald-200" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white">Scanning Image...</h3>
-                    <p className="mt-2 text-sm font-medium text-slate-300">Analyzing leaves for pests</p>
-                </GlassCard>
+                    <h3 className="text-xl font-bold text-slate-800 animate-pulse">{t('pests_scanning_title')}</h3>
+                    <p className="text-slate-500 mt-2 font-medium">{t('pests_scanning_subtitle')}</p>
+                </div>
             )}
 
             {error && !isScanning && (
@@ -117,9 +113,12 @@ const Pests = () => {
                             <ShieldCheck className="h-28 w-28 text-emerald-200" />
                         </div>
 
-                        <div className="relative z-10 mb-2 flex items-center gap-3">
-                            <div className="rounded-2xl bg-emerald-300/20 p-3 text-emerald-200">
-                                <ShieldCheck className="h-7 w-7" />
+                        <div className="flex flex-col gap-4 mb-2 relative z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-brand-green-100 text-brand-green-600 rounded-2xl">
+                                    <ShieldCheck className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-xl font-extrabold text-slate-800">{t('pests_ai_diagnosis')}</h3>
                             </div>
                             <h3 className="text-display text-2xl font-semibold text-white">AI Diagnosis</h3>
                         </div>
@@ -135,16 +134,10 @@ const Pests = () => {
                         onClick={handleReset}
                         className="flex items-center justify-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.45)]"
                     >
-                        <RefreshCw className="h-5 w-5" />
-                        Scan Another Print
-                    </GradientButton>
-                </MotionDiv>
-            )}
-
-            {!isScanning && !result && !error && (
-                <GlassCard className="p-4 text-center">
-                    <p className="text-sm font-medium text-slate-300">No scans yet. Upload a photo to start diagnosis.</p>
-                </GlassCard>
+                        <RefreshCw className="w-5 h-5" />
+                        {t('pests_scan_another')}
+                    </button>
+                </div>
             )}
 
         </div>

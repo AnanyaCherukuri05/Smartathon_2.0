@@ -31,7 +31,7 @@ const Login = () => {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Login failed');
+            if (!res.ok) throw new Error(data.error || t('login_failed'));
 
             login(data.user, data.token);
             navigate('/');
@@ -62,24 +62,29 @@ const Login = () => {
                 <GlassCard className="card-neuro p-8">
                     <h2 className="mb-6 text-2xl font-semibold text-white">{t('login') || 'Login'}</h2>
 
-                    {error && (
-                        <div className="mb-6 rounded-xl border border-red-300/30 bg-red-400/10 p-3 text-sm font-medium text-red-200">
-                            {error}
-                        </div>
-                    )}
+                <form onSubmit={handleLogin} className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">{t('phone') || 'Phone Number'}</label>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            required
+                            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg transition-all"
+                            placeholder={t('phone_placeholder_login')}
+                        />
+                    </div>
 
-                    <form onSubmit={handleLogin} className="space-y-5">
-                        <div>
-                            <label className="mb-2 block text-sm font-semibold text-slate-200">{t('phone') || 'Phone Number'}</label>
-                            <input
-                                type="tel"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                required
-                                className="w-full rounded-2xl border border-white/15 bg-slate-900/55 p-4 text-lg text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
-                                placeholder="Enter mobile number"
-                            />
-                        </div>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">{t('name') || 'Your Name'}</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green-500 text-lg transition-all"
+                            placeholder={t('name_placeholder_login')}
+                        />
+                    </div>
 
                         <div>
                             <label className="mb-2 block text-sm font-semibold text-slate-200">{t('name') || 'Your Name'}</label>

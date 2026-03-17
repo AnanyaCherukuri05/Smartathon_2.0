@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Home, Sprout, CloudSun, Beaker, Bug, LineChart } from 'lucide-react';
 
@@ -13,6 +14,17 @@ const navItems = [
 ];
 
 const BottomNav = () => {
+    const { t } = useTranslation();
+
+    const getLabel = (path) => {
+        if (path === '/') return t('home');
+        if (path === '/crops') return t('crops');
+        if (path === '/weather') return t('weather');
+        if (path === '/soil') return t('soil');
+        if (path === '/pests') return t('pests');
+        if (path === '/market') return t('market');
+        return 'Navigation';
+    };
     const MotionDiv = motion.div;
 
     return (
@@ -22,6 +34,7 @@ const BottomNav = () => {
                     <NavLink
                         key={item.path}
                         to={item.path}
+                        aria-label={getLabel(item.path)}
                         className={({ isActive }) =>
                             `relative flex flex-col items-center justify-center rounded-xl px-3 py-2 transition-all duration-300 ${isActive
                                 ? 'text-emerald-200'

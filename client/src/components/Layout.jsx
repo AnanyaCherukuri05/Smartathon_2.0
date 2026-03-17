@@ -15,6 +15,9 @@ const Layout = () => {
 
             <TopBar />
 
+            {/* Main Content Area */}
+            <main className="flex-1 overflow-y-auto pb-24 pt-3 px-4">
+                <Outlet />
             <main className="relative flex-1 overflow-y-auto px-4 pb-28 pt-4">
                 <AnimatePresence mode="wait">
                     <MotionDiv

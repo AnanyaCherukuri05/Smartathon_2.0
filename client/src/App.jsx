@@ -1,5 +1,7 @@
 import React, { useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthContext } from './context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from './context/auth-context';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -13,9 +15,10 @@ import Signup from './pages/Signup';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-brand-green-600 bg-brand-green-50">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-brand-green-600 bg-brand-green-50">{t('loading')}</div>;
   }
 
   if (!user) {

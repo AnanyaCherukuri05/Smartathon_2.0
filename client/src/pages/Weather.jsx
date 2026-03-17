@@ -2,13 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { CloudRain, Sun, Cloud, AlertTriangle, Droplets, MapPin, Loader2 } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
-import SectionHeader from '../components/SectionHeader';
+import { normalizeLanguageCode } from '../lib/languages';
 
 const Weather = () => {
-    const { t } = useTranslation();
-    const MotionButton = motion.button;
-    const MotionDiv = motion.div;
+    const { t, i18n } = useTranslation();
     const [weatherData, setWeatherData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -16,7 +13,8 @@ const Weather = () => {
     const fetchWeather = async (lat = 28.6139, lon = 77.2090) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/weather?lat=${lat}&lon=${lon}`);
+            const lang = normalizeLanguageCode(i18n.language);
+            const res = await fetch(`http://localhost:5000/api/weather?lat=${lat}&lon=${lon}&lang=${lang}`);
             const data = await res.json();
             setWeatherData(data);
         } catch (error) {
@@ -27,8 +25,9 @@ const Weather = () => {
     };
 
     useEffect(() => {
-        fetchWeather(); // Fetch default on mount
-    }, []);
+        fetchWeather(); // Fetch default on mount and when language changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [i18n.language]);
 
     const handleGetLocation = () => {
         if (navigator.geolocation) {
@@ -50,27 +49,19 @@ const Weather = () => {
 
     const getAdvisory = (code) => {
         if (code >= 500 && code < 600) {
-            return { msg: 'Avoid spraying 🚫', action: 'Do not water crops today 🌧️', alert: true };
+            return { msg: t('weather_avoid_spraying'), action: t('weather_do_not_water_today'), alert: true };
         }
         if (code === 800) {
-            return { msg: 'Good time to spray ✅', action: 'Water crops today 💧', alert: false };
+            return { msg: t('weather_good_time_spray'), action: t('weather_water_today'), alert: false };
         }
-        return { msg: 'Normal conditions ✅', action: 'Standard watering 💧', alert: false };
+        return { msg: t('weather_normal_conditions'), action: t('weather_standard_watering'), alert: false };
     };
 
     if (loading) {
         return (
-            <div className="space-y-4 pb-10">
-                <SectionHeader title={t('weather')} subtitle="Live local conditions" />
-                <GlassCard className="p-6">
-                    <div className="mb-4 h-6 w-28 rounded-xl skeleton-shimmer" />
-                    <div className="mb-5 h-24 rounded-2xl skeleton-shimmer" />
-                    <div className="h-12 rounded-2xl skeleton-shimmer" />
-                </GlassCard>
-                <div className="flex items-center justify-center gap-2 text-emerald-200">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <p className="text-sm font-semibold">Loading Weather...</p>
-                </div>
+            <div className="flex flex-col items-center justify-center h-64 text-brand-green-600">
+                <Loader2 className="w-12 h-12 animate-spin mb-4" />
+                <p className="font-bold">{t('weather_loading')}</p>
             </div>
         );
     }
@@ -111,8 +102,17 @@ const Weather = () => {
                         <span className="text-display text-6xl font-semibold tracking-tighter text-white">
                         {Math.round(current?.temperature || 0)}
                     </span>
-                        <span className="mt-2 text-2xl font-semibold text-slate-300">°C</span>
-                    </div>
+                    <span className="text-2xl font-bold text-slate-500 mt-2">°C</span>
+                </div>
+
+                <p className="text-lg font-medium text-slate-600 mt-2 capitalize flex items-center gap-2">
+                    {current?.description || t('weather_clear')} | {t('weather_wind')}: {Math.round(current?.wind_speed || 0)} km/h
+                </p>
+            </div>
+
+            {/* Advisory Cards */}
+            <h3 className="text-xl font-bold text-slate-800 mt-6 mb-4">{t('advisory')}</h3>
+            <div className="grid grid-cols-1 gap-4">
 
                     <p className="mt-2 text-base font-medium capitalize text-slate-200">
                         {current?.description || 'Clear'} | Wind: {Math.round(current?.wind_speed || 0)} km/h
