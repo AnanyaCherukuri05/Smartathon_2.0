@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../lib/apiClient';
 
 const Pests = () => {
     const { t } = useTranslation();
@@ -21,13 +22,11 @@ const Pests = () => {
         formData.append('image', file);
 
         try {
-            const res = await fetch('http://localhost:5000/api/pests/detect', {
+            const data = await apiFetch('/api/pests/detect', {
                 method: 'POST',
+                auth: false,
                 body: formData
             });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to analyze image');
 
             setResult({
                 status: 'analyzed',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sun, CloudRain, Snowflake, Droplets, Mountain, Sprout, Leaf, Wheat, Cloud, Loader2 } from 'lucide-react';
+import { apiFetch } from '../lib/apiClient';
 
 const iconsRef = { Wheat, Leaf, Sprout, Cloud };
 
@@ -27,16 +28,13 @@ const Crops = () => {
         if (!selectedSoil || !selectedSeason) return;
         setLoading(true);
 
-        fetch(`http://localhost:5000/api/recommendations?soil=${selectedSoil}&season=${selectedSeason}`)
-            .then(res => res.json())
-            .then(data => {
-                setRecommendation(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
+        const soilParam = encodeURIComponent(selectedSoil);
+        const seasonParam = encodeURIComponent(selectedSeason);
+
+        apiFetch(`/api/recommendations?soil=${soilParam}&season=${seasonParam}`, { auth: false })
+            .then((data) => setRecommendation(data))
+            .catch((err) => console.error(err))
+            .finally(() => setLoading(false));
     };
 
     const RecIcon = recommendation ? (iconsRef[recommendation.iconName] || Leaf) : Leaf;

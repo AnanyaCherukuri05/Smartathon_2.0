@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, LogOut } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/AuthContextContext';
 import { LANGUAGE_OPTIONS, normalizeLanguageCode } from '../lib/languages';
 
 const TopBar = () => {

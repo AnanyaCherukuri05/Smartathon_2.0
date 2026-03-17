@@ -1,25 +1,31 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { apiFetch } from '../lib/apiClient';
 
-export const AuthContext = createContext();
+import { AuthContext } from './AuthContextContext';
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const { i18n } = useTranslation();
-
-    useEffect(() => {
+    const [user, setUser] = useState(() => {
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         if (storedUser && token) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-            if (parsedUser.languagePreference) {
-                i18n.changeLanguage(parsedUser.languagePreference);
+            try {
+                return JSON.parse(storedUser);
+            } catch {
+                return null;
             }
         }
-        setLoading(false);
-    }, [i18n]);
+        return null;
+    });
+
+    const [loading] = useState(false);
+    const { i18n } = useTranslation();
+
+    useEffect(() => {
+        if (user?.languagePreference) {
+            i18n.changeLanguage(user.languagePreference);
+        }
+    }, [i18n, user?.languagePreference]);
 
     const login = (userData, token) => {
         setUser(userData);
@@ -45,6 +51,23 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(nextUser));
             return nextUser;
         });
+
+        const token = localStorage.getItem('token');
+        if (token) {
+            apiFetch('/api/auth/me', {
+                method: 'PATCH',
+                body: { languagePreference: languageCode }
+            })
+                .then((data) => {
+                    if (data?.user) {
+                        setUser(data.user);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    }
+                })
+                .catch(() => {
+                    // Non-blocking: keep local preference even if server update fails
+                });
+        }
     };
 
     return (
