@@ -1,32 +1,40 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
-export const AuthContext = createContext();
+import { AuthContext } from './auth-context';
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
     const { i18n } = useTranslation();
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        if (storedUser && token) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-            if (parsedUser.languagePreference) {
-                i18n.changeLanguage(parsedUser.languagePreference);
-            }
+    // Initialize user safely from localStorage (NO setState in useEffect)
+    const [user, setUser] = useState(() => {
+        try {
+            const storedUser = localStorage.getItem('user');
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch (error) {
+            console.error('Failed to parse user from localStorage', error);
+            return null;
         }
-        setLoading(false);
-    }, [i18n]);
+    });
+
+    const loading = false;
+
+    useEffect(() => {
+        if (user?.languagePreference) {
+            i18n.changeLanguage(user.languagePreference);
+        }
+    }, [user, i18n]);
 
     const login = (userData, token) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', token);
-        if (userData.languagePreference) {
-            i18n.changeLanguage(userData.languagePreference);
+        try {
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+            localStorage.setItem('token', token);
+
+            if (userData.languagePreference) {
+                i18n.changeLanguage(userData.languagePreference);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
         }
     };
 
@@ -41,14 +49,27 @@ export const AuthProvider = ({ children }) => {
 
         setUser((prevUser) => {
             if (!prevUser) return prevUser;
-            const nextUser = { ...prevUser, languagePreference: languageCode };
-            localStorage.setItem('user', JSON.stringify(nextUser));
-            return nextUser;
+
+            const updatedUser = {
+                ...prevUser,
+                languagePreference: languageCode,
+            };
+
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            return updatedUser;
         });
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, setLanguagePreference }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                loading,
+                login,
+                logout,
+                setLanguagePreference,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );

@@ -1,26 +1,61 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Beaker, Droplets, Leaf, ThumbsUp, AlertCircle, ShoppingBag } from 'lucide-react';
+import { apiFetch } from '../lib/apiClient';
 
 const Soil = () => {
     const { t } = useTranslation();
     const [moisture, setMoisture] = useState(50); // 0-100
     const [ph, setPh] = useState(6.5); // 0-14
+    const [serverStatus, setServerStatus] = useState(null);
 
-    const getMoistureStatus = (val) => {
-        if (val < 30) return { text: t('soil_moisture_too_dry'), icon: AlertCircle, color: 'text-orange-500 bg-orange-100', need: t('soil_moisture_need_water') };
-        if (val > 80) return { text: t('soil_moisture_too_wet'), icon: AlertCircle, color: 'text-blue-500 bg-blue-100', need: t('soil_moisture_need_stop') };
+    const localMoistureKey = useMemo(() => {
+        if (moisture < 30) return 'too_dry';
+        if (moisture > 80) return 'too_wet';
+        return 'good';
+    }, [moisture]);
+
+    const localPhKey = useMemo(() => {
+        if (ph < 5.5) return 'acidic';
+        if (ph > 7.5) return 'alkaline';
+        return 'neutral';
+    }, [ph]);
+
+    const moistureKey = serverStatus?.moistureStatus || localMoistureKey;
+    const phKey = serverStatus?.phStatus || localPhKey;
+
+    const currentMoisStatus = useMemo(() => {
+        if (moistureKey === 'too_dry') {
+            return { text: t('soil_moisture_too_dry'), icon: AlertCircle, color: 'text-orange-500 bg-orange-100', need: t('soil_moisture_need_water') };
+        }
+        if (moistureKey === 'too_wet') {
+            return { text: t('soil_moisture_too_wet'), icon: AlertCircle, color: 'text-blue-500 bg-blue-100', need: t('soil_moisture_need_stop') };
+        }
         return { text: t('soil_status_good'), icon: ThumbsUp, color: 'text-brand-green-500 bg-brand-green-100', need: t('soil_moisture_need_perfect') };
-    };
+    }, [moistureKey, t]);
 
-    const getPhStatus = (val) => {
-        if (val < 5.5) return { text: t('soil_ph_acidic'), color: 'text-red-500 bg-red-100', action: t('soil_ph_action_add_lime') };
-        if (val > 7.5) return { text: t('soil_ph_alkaline'), color: 'text-purple-500 bg-purple-100', action: t('soil_ph_action_add_sulfur') };
+    const currentPhStatus = useMemo(() => {
+        if (phKey === 'acidic') return { text: t('soil_ph_acidic'), color: 'text-red-500 bg-red-100', action: t('soil_ph_action_add_lime') };
+        if (phKey === 'alkaline') return { text: t('soil_ph_alkaline'), color: 'text-purple-500 bg-purple-100', action: t('soil_ph_action_add_sulfur') };
         return { text: t('soil_ph_neutral'), color: 'text-brand-green-500 bg-brand-green-100', action: t('soil_ph_action_great') };
-    };
+    }, [phKey, t]);
 
-    const currentMoisStatus = getMoistureStatus(moisture);
-    const currentPhStatus = getPhStatus(ph);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            apiFetch('/api/soil/analyze', {
+                method: 'POST',
+                auth: false,
+                body: { moisture, ph }
+            })
+                .then((data) => setServerStatus(data))
+                .catch(() => setServerStatus(null));
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [moisture, ph]);
+
+    const showAcidicHint = phKey === 'acidic';
+    const showAlkalineHint = phKey === 'alkaline';
 
     return (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
@@ -77,7 +112,7 @@ const Soil = () => {
                 </div>
 
                 {/* Suggestion based on pH */}
-                {ph < 5.5 && (
+                {showAcidicHint && (
                     <div className="p-4 bg-orange-50 rounded-2xl flex items-center gap-3 border border-orange-100">
                         <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0">
                             <ShoppingBag className="w-5 h-5" />
@@ -88,7 +123,7 @@ const Soil = () => {
                         </div>
                     </div>
                 )}
-                {ph > 7.5 && (
+                {showAlkalineHint && (
                     <div className="p-4 bg-purple-50 rounded-2xl flex items-center gap-3 border border-purple-100">
                         <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center shrink-0">
                             <ShoppingBag className="w-5 h-5" />
@@ -99,7 +134,7 @@ const Soil = () => {
                         </div>
                     </div>
                 )}
-                {ph >= 5.5 && ph <= 7.5 && (
+                {!showAcidicHint && !showAlkalineHint && (
                     <div className="p-4 bg-brand-green-50 rounded-2xl flex items-center justify-center gap-2 border border-brand-green-100 text-brand-green-700 font-bold">
                         {t('soil_balanced')}
                     </div>

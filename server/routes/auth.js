@@ -2,8 +2,32 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const requireAuth = require('../middleware/requireAuth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hackathon_super_secret_key';
+
+// Get current user
+router.get('/me', requireAuth, async (req, res) => {
+    res.json({ user: req.user });
+});
+
+// Update current user (limited fields)
+router.patch('/me', requireAuth, async (req, res) => {
+    try {
+        const { languagePreference } = req.body;
+        if (!languagePreference) {
+            return res.status(400).json({ error: 'languagePreference is required' });
+        }
+
+        req.user.languagePreference = languagePreference;
+        await req.user.save();
+
+        res.json({ user: req.user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error updating profile' });
+    }
+});
 
 // Register User
 router.post('/register', async (req, res) => {

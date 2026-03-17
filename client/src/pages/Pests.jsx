@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
+cd D:\KisanSetu\Smartathon_2.0
+git rm -r --cached server/node_modules
+git rm -r --cached client/node_modulesgit add .import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 import PestResultCard from '../components/PestResultCard';
 
 const Pests = () => {
     const { t } = useTranslation();
+    const MotionDiv = motion.div;
     const [isScanning, setIsScanning] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
@@ -58,16 +61,20 @@ const Pests = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
-            <h2 className="text-2xl font-bold text-slate-800">{t('pests')} Detection</h2>
+        <div className="space-y-6 pb-10">
+            <SectionHeader title={`${t('pests')} Detection`} subtitle="Upload a crop image for AI analysis" />
 
             {!isScanning && !result && (
-                <div className="flex flex-col items-center justify-center p-8 bg-white border-2 border-dashed border-brand-green-200 rounded-3xl mt-12 shadow-sm min-h-[300px]">
-                    <div className="w-24 h-24 bg-brand-green-50 rounded-full flex items-center justify-center mb-6 text-brand-green-600">
-                        <Camera className="w-12 h-12" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2 text-center">Take a photo of your crop</h3>
-                    <p className="text-slate-500 text-center mb-8 font-medium">To identify pests or diseases automatically</p>
+                <GlassCard className="card-neuro mt-8 border-dashed p-8 text-center">
+                    <MotionDiv
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-emerald-200/35 bg-emerald-400/15 text-emerald-200"
+                    >
+                        <Camera className="h-12 w-12" />
+                    </MotionDiv>
+                    <h3 className="text-display mb-2 text-2xl font-semibold text-white">Take a photo of your crop</h3>
+                    <p className="mb-8 text-sm font-medium text-slate-300">To identify pests or diseases automatically</p>
 
                     <input
                         type="file"
@@ -76,45 +83,42 @@ const Pests = () => {
                         ref={fileInputRef}
                         onChange={handleFileChange}
                     />
-                    <button
-                        onClick={handleUploadClick}
-                        className="w-full py-4 rounded-full bg-brand-green-600 text-white font-bold text-lg shadow-lg shadow-brand-green-600/30 active:scale-95 transition-transform flex justify-center items-center gap-2"
-                    >
-                        <ImageIcon className="w-6 h-6" />
+                    <GradientButton onClick={handleUploadClick} className="mx-auto flex max-w-xs items-center justify-center gap-2 py-3">
+                        <ImageIcon className="h-5 w-5" />
                         Upload Photo
-                    </button>
-                </div>
+                    </GradientButton>
+                </GlassCard>
             )}
 
             {isScanning && (
-                <div className="flex flex-col items-center justify-center p-8 mt-12 min-h-[300px]">
-                    <div className="relative w-32 h-32 flex items-center justify-center mb-6">
-                        <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-brand-green-500 rounded-full border-t-transparent animate-spin"></div>
-                        <Camera className="w-12 h-12 text-brand-green-600 animate-pulse" />
+                <GlassCard className="mt-8 p-8 text-center">
+                    <div className="relative mx-auto mb-6 flex h-32 w-32 items-center justify-center">
+                        <div className="absolute inset-0 rounded-full border-4 border-slate-200/20"></div>
+                        <div className="absolute inset-0 animate-spin rounded-full border-4 border-emerald-300 border-t-transparent"></div>
+                        <Camera className="h-12 w-12 animate-pulse text-emerald-200" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800 animate-pulse">Scanning Image...</h3>
-                    <p className="text-slate-500 mt-2 font-medium">Analyzing leaves for pests</p>
-                </div>
+                    <h3 className="text-xl font-semibold text-white">Scanning Image...</h3>
+                    <p className="mt-2 text-sm font-medium text-slate-300">Analyzing leaves for pests</p>
+                </GlassCard>
             )}
 
             {error && !isScanning && (
-                <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl flex items-center justify-center font-bold">
+                <GlassCard className="rounded-2xl border-red-300/35 bg-red-400/10 p-4 text-center text-sm font-semibold text-red-200">
                     {error}
-                </div>
+                </GlassCard>
             )}
 
             {result && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
                     <PestResultCard result={result.data} />
 
-                    <button
+                    <GradientButton
                         onClick={handleReset}
-                        className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold active:scale-95 transition-transform flex justify-center items-center gap-2"
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.45)]"
                     >
                         <RefreshCw className="w-5 h-5" />
                         Scan Another Leaf
-                    </button>
+                    </GradientButton>
                 </div>
             )}
 

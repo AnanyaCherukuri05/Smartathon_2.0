@@ -1,10 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { Sprout, CloudSun, Beaker, Bug, LineChart } from 'lucide-react';
 import ActionCard from '../components/ActionCard';
+import GlassCard from '../components/GlassCard';
+import SectionHeader from '../components/SectionHeader';
 
 const Dashboard = () => {
     const { t } = useTranslation();
+    const MotionDiv = motion.div;
 
     const actions = [
         {
@@ -40,26 +44,40 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="space-y-6">
-            {/* Hero Section */}
-            <div className="bg-brand-green-500 rounded-3xl p-6 text-white text-center shadow-lg shadow-brand-green-500/20 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-green-700/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
-
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-extrabold mb-2 text-white drop-shadow-sm">{t('app_title')}</h2>
-                    <p className="text-brand-green-50 font-medium text-lg leading-relaxed">{t('tagline')}</p>
-                </div>
-            </div>
-
-            {/* Grid Menu */}
-            <div className="grid grid-cols-2 gap-4">
-                {actions.map((action, index) => (
-                    <div key={index} className={index === 0 ? "col-span-2" : "col-span-1"}>
-                        <ActionCard {...action} />
+        <div className="space-y-6 pb-10">
+            <MotionDiv initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <GlassCard className="card-neuro relative overflow-hidden p-6">
+                    <div className="absolute -top-24 right-0 h-52 w-52 rounded-full bg-cyan-300/20 blur-3xl" />
+                    <div className="absolute -bottom-20 left-0 h-44 w-44 rounded-full bg-emerald-300/20 blur-3xl" />
+                    <div className="relative z-10">
+                        <p className="text-sm font-medium uppercase tracking-[0.22em] text-emerald-200/80">Smart Crop App</p>
+                        <h2 className="text-display mt-3 text-3xl font-semibold leading-tight text-white">{t('app_title')}</h2>
+                        <p className="mt-2 max-w-xs text-sm font-medium leading-relaxed text-slate-200/90">{t('tagline')}</p>
                     </div>
+                </GlassCard>
+            </MotionDiv>
+
+            <SectionHeader title={t('dashboard') || 'Dashboard'} subtitle="Your crop intelligence workspace" />
+
+            <MotionDiv
+                className="grid grid-cols-2 gap-4"
+                initial="hidden"
+                animate="show"
+                variants={{
+                    hidden: {},
+                    show: { transition: { staggerChildren: 0.08 } },
+                }}
+            >
+                {actions.map((action, index) => (
+                    <MotionDiv
+                        key={index}
+                        variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
+                        className={index === 0 ? 'col-span-2' : 'col-span-1'}
+                    >
+                        <ActionCard {...action} />
+                    </MotionDiv>
                 ))}
-            </div>
+            </MotionDiv>
         </div>
     );
 };
