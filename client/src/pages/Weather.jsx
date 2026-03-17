@@ -6,23 +6,104 @@ import SectionHeader from '../components/SectionHeader';
 import { apiFetch } from '../lib/apiClient';
 
 const DEFAULT_COORDS = { lat: 28.6139, lon: 77.2090 };
+const TARGET_ACCURACY_METERS = 1200;
+const APPROXIMATE_ACCURACY_METERS = 3000;
+const MAX_GPS_WAIT_MS = 18000;
+const REJECT_ACCURACY_METERS = 20000;
+const FRESH_POSITION_MAX_AGE_MS = 120000;
+
+const getPositionAccuracy = (position) => Number(position?.coords?.accuracy ?? Number.POSITIVE_INFINITY);
+const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+const hasValidCoords = (position) => isFiniteNumber(position?.coords?.latitude) && isFiniteNumber(position?.coords?.longitude);
+const isFreshPosition = (position) => {
+    const timestamp = Number(position?.timestamp);
+    if (!Number.isFinite(timestamp)) return true;
+    return (Date.now() - timestamp) <= FRESH_POSITION_MAX_AGE_MS;
+};
+
+const sortPositionsByAccuracy = (a, b) => getPositionAccuracy(a) - getPositionAccuracy(b);
 
 const getCurrentPositionAsync = (options) => new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
+});
+
+const getBestPositionFromWatch = ({ timeoutMs = MAX_GPS_WAIT_MS, desiredAccuracy = TARGET_ACCURACY_METERS } = {}) => new Promise((resolve, reject) => {
+    const samples = [];
+    let watchId = null;
+    let settled = false;
+
+    const finish = (position) => {
+        if (settled) return;
+        settled = true;
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+        }
+        clearTimeout(timeoutId);
+        resolve(position);
+    };
+
+    const fail = (error) => {
+        if (settled) return;
+        settled = true;
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+        }
+        clearTimeout(timeoutId);
+        reject(error);
+    };
+
+    const getBestSample = () => samples.sort(sortPositionsByAccuracy)[0] || null;
+
+    const timeoutId = setTimeout(() => {
+        const best = getBestSample();
+        if (best) {
+            if (getPositionAccuracy(best) > REJECT_ACCURACY_METERS) {
+                fail(new Error('GPS accuracy too low'));
+                return;
+            }
+            finish(best);
+            return;
+        }
+        fail(new Error('Timed out while waiting for precise GPS lock'));
+    }, timeoutMs);
+
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            samples.push(position);
+            const best = getBestSample();
+            const bestAccuracy = getPositionAccuracy(best);
+
+            if (bestAccuracy <= desiredAccuracy) {
+                finish(best);
+            }
+        },
+        (watchError) => {
+            const best = getBestSample();
+            if (best) {
+                finish(best);
+                return;
+            }
+            fail(watchError);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: timeoutMs,
+            maximumAge: 0
+        }
+    );
 });
 
 const getBestDevicePosition = async () => {
     const attempts = [];
 
     try {
-        const coarse = await getCurrentPositionAsync({
-            enableHighAccuracy: false,
-            timeout: 7000,
-            maximumAge: 300000
+        const sampled = await getBestPositionFromWatch({
+            timeoutMs: MAX_GPS_WAIT_MS,
+            desiredAccuracy: TARGET_ACCURACY_METERS
         });
-        attempts.push(coarse);
-    } catch (coarseError) {
-        // Best-effort coarse reading. Continue to precise attempt.
+        attempts.push(sampled);
+    } catch (watchError) {
+        // Continue to direct position attempts.
     }
 
     try {
@@ -33,20 +114,34 @@ const getBestDevicePosition = async () => {
         });
         attempts.push(precise);
     } catch (preciseError) {
-        if (!attempts.length) {
-            throw preciseError;
-        }
+        // Try coarse fallback if precise lock is not available.
     }
 
-    if (!attempts.length) {
+    try {
+        const coarse = await getCurrentPositionAsync({
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 60000
+        });
+        attempts.push(coarse);
+    } catch (coarseError) {
+        // No more fallbacks.
+    }
+
+    const validAttempts = attempts
+        .filter((position) => hasValidCoords(position) && isFreshPosition(position))
+        .sort(sortPositionsByAccuracy);
+
+    if (!validAttempts.length) {
         throw new Error('Unable to detect device location');
     }
 
-    return attempts.sort((a, b) => {
-        const aAccuracy = Number(a?.coords?.accuracy ?? Number.POSITIVE_INFINITY);
-        const bAccuracy = Number(b?.coords?.accuracy ?? Number.POSITIVE_INFINITY);
-        return aAccuracy - bAccuracy;
-    })[0];
+    const best = validAttempts[0];
+    if (getPositionAccuracy(best) > REJECT_ACCURACY_METERS) {
+        throw new Error('Location accuracy too low');
+    }
+
+    return best;
 };
 
 const Weather = () => {
@@ -97,21 +192,28 @@ const Weather = () => {
             const latitude = position?.coords?.latitude;
             const longitude = position?.coords?.longitude;
             const accuracy = position?.coords?.accuracy;
+            const numericAccuracy = Number.isFinite(accuracy) ? accuracy : null;
+            const isApproximate = Number.isFinite(numericAccuracy) && numericAccuracy > APPROXIMATE_ACCURACY_METERS;
 
             setLocationMeta({
                 lat: latitude,
                 lon: longitude,
-                accuracy: Number.isFinite(accuracy) ? accuracy : null,
-                source: 'live'
+                accuracy: numericAccuracy,
+                source: isApproximate ? 'approximate' : 'live'
             });
 
-            fetchWeather(latitude, longitude, 'live');
+            fetchWeather(latitude, longitude, isApproximate ? 'approximate' : 'live');
         } catch (geoError) {
             console.error('Geolocation error:', geoError);
-            setLocationStatus('denied');
+            const isPermissionDenied = Number(geoError?.code) === 1;
+            setLocationStatus(isPermissionDenied ? 'denied' : 'unavailable');
 
             if (fallbackToDefault) {
-                setError('Could not detect precise location. Showing default location weather.');
+                setError(
+                    isPermissionDenied
+                        ? 'Location permission denied. Showing default location weather.'
+                        : 'Could not detect precise location. Showing default location weather.'
+                );
                 setLocationMeta({
                     lat: DEFAULT_COORDS.lat,
                     lon: DEFAULT_COORDS.lon,
@@ -246,8 +348,10 @@ const Weather = () => {
 
     const locationBadgeText = useMemo(() => {
         if (locationStatus === 'live') return 'Live location';
+        if (locationStatus === 'approximate') return 'Approx location';
         if (locationStatus === 'detecting') return 'Detecting location';
         if (locationStatus === 'unsupported') return 'Location unavailable';
+        if (locationStatus === 'unavailable') return 'Location unavailable';
         if (locationStatus === 'denied') return 'Permission denied';
         return 'Default location';
     }, [locationStatus]);
@@ -327,7 +431,15 @@ const Weather = () => {
                         <p className="mb-2 text-xs font-semibold text-slate-500">
                             {locationMeta.source === 'live' && Number.isFinite(locationMeta.accuracy)
                                 ? `Accuracy ~${Math.round(locationMeta.accuracy)}m | ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`
+                                : locationMeta.source === 'approximate' && Number.isFinite(locationMeta.accuracy)
+                                    ? `Approx ~${(locationMeta.accuracy / 1000).toFixed(1)} km | ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`
                                 : `Using coordinates ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`}
+                        </p>
+                    ) : null}
+
+                    {locationStatus === 'approximate' ? (
+                        <p className="mb-2 text-xs font-semibold text-amber-700">
+                            GPS fix is approximate. Enable Precise Location and refresh from the pin icon.
                         </p>
                     ) : null}
 
