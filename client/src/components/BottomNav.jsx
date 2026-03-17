@@ -13,26 +13,29 @@ const navItems = [
 
 const BottomNav = () => {
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-md border-t border-green-100 bg-white px-3 py-2">
-            <div className="flex items-center justify-around rounded-xl border border-green-100 bg-white px-2 py-2 shadow-md">
+        <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-5xl px-3 pb-3 pt-2 sm:px-5">
+            <div className="glass-surface card-neuro mx-auto flex w-full max-w-4xl items-center justify-between rounded-3xl border border-emerald-100/80 px-2 py-2 sm:px-3">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
                         className={({ isActive }) =>
-                            `relative flex flex-col items-center justify-center rounded-xl px-3 py-2 transition-all duration-300 ${isActive
-                                ? 'text-green-600'
-                                : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
+                            `relative flex min-w-0 flex-1 items-center justify-center rounded-2xl px-2 py-2 text-center transition-all duration-300 ${isActive
+                                ? 'bg-emerald-50/90 text-emerald-700'
+                                : 'text-slate-500 hover:bg-emerald-50/70 hover:text-emerald-700'
                             }`
                         }
                     >
                         {({ isActive }) => (
-                            <div className="flex flex-col items-center">
-                                <div className={`${isActive ? 'rounded-xl bg-green-50 p-2' : 'p-2'}`}>
+                            <div className="flex min-w-0 flex-col items-center gap-1">
+                                <div className={`${isActive ? 'rounded-xl bg-white p-2 shadow-sm' : 'p-2'}`}>
                                     {item.icon}
                                 </div>
+                                <span className="truncate text-[11px] font-bold uppercase tracking-[0.08em]">
+                                    {item.label}
+                                </span>
                                 {isActive && (
-                                    <span className="absolute -bottom-0.5 h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                                    <span className="absolute -bottom-0.5 h-1.5 w-7 rounded-full bg-emerald-500"></span>
                                 )}
                             </div>
                         )}

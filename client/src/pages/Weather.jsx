@@ -58,9 +58,9 @@ const Weather = () => {
 
     if (loading) {
         return (
-            <div className="space-y-4 pb-10">
-                <SectionHeader title={t('weather')} subtitle="Live local conditions" />
-                <GlassCard className="p-6">
+            <div className="page-reveal space-y-4 pb-10">
+                <SectionHeader eyebrow="Climate Intelligence" title={t('weather')} subtitle="Live local conditions" />
+                <GlassCard className="border-emerald-100/80 p-6">
                     <div className="mb-4 h-6 w-28 rounded-xl skeleton-shimmer" />
                     <div className="mb-5 h-24 rounded-2xl skeleton-shimmer" />
                     <div className="h-12 rounded-2xl skeleton-shimmer" />
@@ -79,30 +79,31 @@ const Weather = () => {
     const WeatherIcon = visuals.icon;
 
     return (
-        <div className="space-y-6 pb-10">
+        <div className="page-reveal space-y-6 pb-10">
             <SectionHeader
+                eyebrow="Climate Intelligence"
                 title={t('weather')}
                 subtitle="Field-aware climate updates"
                 action={(
                     <button
                         type="button"
                         onClick={handleGetLocation}
-                        className="rounded-xl border border-green-200 bg-white p-2.5 text-green-600 transition-colors hover:bg-green-50"
+                        className="rounded-2xl border border-emerald-200 bg-white/90 p-2.5 text-emerald-700 transition-colors hover:bg-emerald-50"
                     >
                         <MapPin className="h-5 w-5" />
                     </button>
                 )}
             />
 
-            <GlassCard className="p-7 text-center">
+            <GlassCard className="border-emerald-100/80 p-7 text-center">
                 <div>
                     <WeatherIcon className={`mx-auto mb-3 h-28 w-28 ${visuals.color}`} />
 
                     <div className="flex items-start justify-center">
-                        <span className="text-display text-6xl font-semibold tracking-tighter text-gray-800">
+                        <span className="text-display text-6xl font-semibold tracking-tighter text-slate-800">
                         {Math.round(current?.temperature || 0)}
                     </span>
-                        <span className="mt-2 text-2xl font-semibold text-gray-500">°C</span>
+                        <span className="mt-2 text-2xl font-semibold text-slate-500">°C</span>
                     </div>
 
                     <p className="mt-2 text-base font-medium capitalize text-gray-600">
@@ -110,17 +111,17 @@ const Weather = () => {
                     </p>
 
                     <div className="mt-6 grid grid-cols-2 gap-3 text-left">
-                        <div className="rounded-xl border border-green-100 bg-green-50 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">Condition</p>
-                            <div className="mt-2 flex items-center gap-2 text-gray-800">
-                                <Droplets className="h-4 w-4 text-green-600" />
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Condition</p>
+                            <div className="mt-2 flex items-center gap-2 text-slate-800">
+                                <Droplets className="h-4 w-4 text-emerald-700" />
                                 <span className="text-sm font-semibold">{current?.description || 'Clear skies'}</span>
                             </div>
                         </div>
-                        <div className="rounded-xl border border-green-100 bg-green-50 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-500">Wind Speed</p>
-                            <div className="mt-2 flex items-center gap-2 text-gray-800">
-                                <Wind className="h-4 w-4 text-green-600" />
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Wind Speed</p>
+                            <div className="mt-2 flex items-center gap-2 text-slate-800">
+                                <Wind className="h-4 w-4 text-emerald-700" />
                                 <span className="text-sm font-semibold">{Math.round(current?.wind_speed || 0)} km/h</span>
                             </div>
                         </div>
@@ -129,14 +130,14 @@ const Weather = () => {
             </GlassCard>
 
             <SectionHeader title={t('advisory')} className="mb-0" />
-            <GlassCard className={`p-5 ${advisory.alert ? 'border-green-200 bg-green-50' : 'border-green-200 bg-green-50'}`}>
+            <GlassCard className={`border-emerald-100/80 p-5 ${advisory.alert ? 'bg-amber-50/70' : 'bg-emerald-50/70'}`}>
                 <div className="flex items-center gap-4">
-                    <div className="rounded-xl bg-green-100 p-3 text-green-600">
+                    <div className="rounded-xl bg-white p-3 text-emerald-700">
                         {advisory.alert ? <AlertTriangle className="h-8 w-8" /> : <Droplets className="h-8 w-8" />}
                     </div>
                     <div>
-                        <h4 className="text-lg font-semibold text-gray-800">{advisory.msg}</h4>
-                        <p className="text-sm font-medium text-gray-600">{advisory.action}</p>
+                        <h4 className="text-lg font-semibold text-slate-800">{advisory.msg}</h4>
+                        <p className="text-sm font-medium text-slate-600">{advisory.action}</p>
                     </div>
                 </div>
             </GlassCard>

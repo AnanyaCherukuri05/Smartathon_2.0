@@ -48,23 +48,49 @@ const Dashboard = () => {
         },
     ];
 
+    const quickSignals = ['AI crop recommendations', 'Hyperlocal weather', 'Pest detection alerts', 'Market timing insights'];
+
     return (
-        <div className="space-y-6 pb-10">
-            <GlassCard className="p-6">
-                <p className="text-sm font-medium text-green-600">{greeting}</p>
-                <h2 className="text-display mt-2 text-3xl font-semibold text-gray-800">{t('app_title')}</h2>
-                <p className="mt-2 max-w-xs text-sm font-medium leading-relaxed text-gray-600">{t('tagline')}</p>
+        <div className="page-reveal space-y-6 pb-10">
+            <GlassCard className="relative overflow-hidden border-emerald-100/80 p-6 sm:p-8">
+                <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-emerald-200/50 blur-2xl" />
+                <div className="absolute -bottom-16 left-1/3 h-32 w-32 rounded-full bg-lime-200/60 blur-2xl" />
+
+                <div className="relative">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700/85">{greeting}</p>
+                    <h2 className="text-display mt-2 text-3xl font-semibold text-slate-800 sm:text-4xl">{t('app_title')}</h2>
+                    <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">{t('tagline')}</p>
+
+                    <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                        {quickSignals.map((signal) => (
+                            <div key={signal} className="rounded-2xl border border-emerald-100 bg-white/80 px-3 py-2 text-center text-xs font-bold uppercase tracking-[0.08em] text-emerald-700">
+                                {signal}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </GlassCard>
 
-            <SectionHeader title={t('dashboard') || 'Dashboard'} subtitle="Your crop intelligence workspace" />
+            <SectionHeader
+                eyebrow="Command Center"
+                title={t('dashboard') || 'Dashboard'}
+                subtitle="Jump into the right workflow in one tap and make faster field decisions."
+            />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {actions.map((action, index) => (
-                    <div key={index} className={index === 0 ? 'col-span-2' : 'col-span-1'}>
+                    <div key={action.path} className={index === 0 ? 'sm:col-span-2 lg:col-span-2' : ''}>
                         <ActionCard {...action} />
                     </div>
                 ))}
             </div>
+
+            <GlassCard className="border-emerald-100/80 p-5 sm:p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700/80">Judge-ready story</p>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-700 sm:text-base">
+                    KisanSetu combines advisory intelligence, crop-health scanning, and market timing in one seamless mobile-first interface tailored for real farmer workflows.
+                </p>
+            </GlassCard>
         </div>
     );
 };

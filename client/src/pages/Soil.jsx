@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Beaker, Droplets, Leaf, ThumbsUp, AlertCircle, ShoppingBag } from 'lucide-react';
 import { apiFetch } from '../lib/apiClient';
+import GlassCard from '../components/GlassCard';
+import SectionHeader from '../components/SectionHeader';
 
 const Soil = () => {
     const { t } = useTranslation();
@@ -58,11 +60,15 @@ const Soil = () => {
     const showAlkalineHint = phKey === 'alkaline';
 
     return (
-        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 pb-10">
-            <h2 className="text-2xl font-bold text-slate-800">{t('soil_health_title')}</h2>
+        <div className="page-reveal space-y-6 pb-10">
+            <SectionHeader
+                eyebrow="Soil Intelligence"
+                title={t('soil_health_title')}
+                subtitle="Adjust moisture and pH to get immediate, practical field guidance."
+            />
 
             {/* Moisture Card */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <GlassCard className="border-emerald-100/80 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                         <Droplets className="w-6 h-6 text-blue-500" /> {t('soil_moisture')}
@@ -86,10 +92,10 @@ const Soil = () => {
                     </div>
                     <p className="font-bold text-slate-700">{currentMoisStatus.need}</p>
                 </div>
-            </div>
+            </GlassCard>
 
             {/* pH Card */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <GlassCard className="border-emerald-100/80 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                         <Beaker className="w-6 h-6 text-purple-500" /> {t('soil_ph_level')}
@@ -139,7 +145,7 @@ const Soil = () => {
                         {t('soil_balanced')}
                     </div>
                 )}
-            </div>
+            </GlassCard>
 
         </div>
     );
