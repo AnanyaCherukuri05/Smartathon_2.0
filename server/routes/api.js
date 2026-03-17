@@ -156,15 +156,13 @@ router.get('/recommendations', async (req, res) => {
 
         if (ai) {
             try {
-
-                const aiResponse = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
-                    contents: `Farmer has ${soil} soil and season is ${season}. Recommend ${cropPayload.name}. Explain in 1 simple sentence for a farmer.`
-                });
+                const aiResponse = await generateGeminiContent(
+                    `Farmer has ${soil} soil and season is ${season}. Recommend ${cropPayload.name}. Explain in 1 simple sentence for a farmer.`
+                );
 
                 return res.json({
                     ...cropPayload,
-                    aiExplanation: aiResponse.text
+                    aiExplanation: extractGeminiText(aiResponse)
                 });
 
             } catch (err) {
@@ -277,6 +275,63 @@ const extractGeminiText = (aiResponse) => {
     throw new Error('Could not extract text from Gemini response');
 };
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetriableGeminiError = (message) => {
+    const value = String(message || '').toLowerCase();
+
+    return (
+        value.includes('high demand') ||
+        value.includes('rate limit') ||
+        value.includes('quota') ||
+        value.includes('resource_exhausted') ||
+        value.includes('"status":"unavailable"') ||
+        value.includes('"status":"resource_exhausted"') ||
+        value.includes('"code":429') ||
+        value.includes('"code":503')
+    );
+};
+
+const generateGeminiContent = async (contents) => {
+    if (!ai) {
+        throw new Error('Gemini API not configured');
+    }
+
+    const modelPlan = [
+        { name: 'gemini-2.5-flash', attempts: 2 },
+        { name: 'gemini-1.5-flash', attempts: 1 }
+    ];
+
+    let lastError = null;
+
+    for (const modelConfig of modelPlan) {
+        for (let attempt = 1; attempt <= modelConfig.attempts; attempt += 1) {
+            try {
+                return await ai.models.generateContent({
+                    model: modelConfig.name,
+                    contents
+                });
+            } catch (error) {
+                lastError = error;
+                const message = error?.message || String(error);
+                const retryable = isRetriableGeminiError(message);
+                const hasMoreAttempts = attempt < modelConfig.attempts;
+
+                if (retryable && hasMoreAttempts) {
+                    await wait(700 * attempt);
+                    continue;
+                }
+
+                if (!retryable && modelConfig.name === modelPlan[0].name) {
+                    throw error;
+                }
+            }
+        }
+    }
+
+    throw lastError || new Error('Gemini request failed');
+};
+
 const genericFallbackTreatment = {
     pesticides: [
         {
@@ -354,8 +409,20 @@ const normalizeServiceWarning = (reason) => {
         return 'AI key issue detected. Update GEMINI_API_KEY/GOOGLE_API_KEY in server .env and restart backend.';
     }
 
-    if (value.includes('quota') || value.includes('rate limit')) {
+    if (value.includes('quota') || value.includes('rate limit') || value.includes('resource_exhausted')) {
         return 'AI usage limit reached temporarily. Showing preventive advisory mode.';
+    }
+
+    if (value.includes('high demand') || value.includes('"status":"unavailable"') || value.includes('"code":503')) {
+        return 'AI service is busy right now. Please retry in a few seconds. Showing preventive advisory mode.';
+    }
+
+    if (value.includes('unable to process input image') || value.includes('invalid_argument')) {
+        return 'Uploaded image could not be processed. Please use a clear JPG/PNG crop photo.';
+    }
+
+    if (value.includes('buffering timed out') || value.includes('could not connect') || value.includes('mongodb')) {
+        return 'Treatment database is temporarily unavailable. Showing preventive advisory mode.';
     }
 
     return 'AI service is temporarily unavailable. Showing preventive advisory mode.';
@@ -364,6 +431,17 @@ const normalizeServiceWarning = (reason) => {
 const getFallbackPayload = async (reason) => {
     const safeReason = normalizeServiceWarning(reason);
     const fallbackDiagnosis = 'AI image analysis is temporarily unavailable.\nShowing preventive advisory so you can take safe immediate action.\nPlease verify symptoms before spraying and follow all precautions.';
+
+    if (!mongoConnected()) {
+        return mapResponsePayload(
+            fallbackDiagnosis,
+            'General Crop Advisory',
+            null,
+            genericFallbackTreatment,
+            'fallback',
+            safeReason
+        );
+    }
 
     try {
         let fallbackTreatment = await Treatment.findOne({ pestName: 'Powdery Mildew' });
@@ -405,6 +483,10 @@ const getFallbackPayload = async (reason) => {
 };
 
 const getAdvisoryTreatmentRecord = async () => {
+    if (!mongoConnected()) {
+        return null;
+    }
+
     const preferred = await Treatment.findOne({ pestName: 'Powdery Mildew' });
     if (preferred) return preferred;
     return Treatment.findOne();
@@ -431,22 +513,19 @@ router.post('/pests/detect', upload.single('image'), async (req, res) => {
 
         try {
             // First, get AI analysis to identify the pest
-            const aiResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [
-                    {
-                        inlineData: {
-                            data: base64Data,
-                            mimeType: mimeType
-                        }
-                    },
-                    `Analyze this crop image for pests, diseases, or deficiencies. 
-                    Return ONLY the name of the identified disease/pest in the first line (e.g., "Powdery Mildew" or "Fall Armyworm").
-                    Then on the next line, provide a simple 2-sentence diagnosis.
-                    Then provide 1 actionable immediate suggestion.
-                    Use simple words that farmers can understand. Include relevant emojis.`
-                ]
-            });
+            const aiResponse = await generateGeminiContent([
+                {
+                    inlineData: {
+                        data: base64Data,
+                        mimeType: mimeType
+                    }
+                },
+                `Analyze this crop image for pests, diseases, or deficiencies. 
+                Return ONLY the name of the identified disease/pest in the first line (e.g., "Powdery Mildew" or "Fall Armyworm").
+                Then on the next line, provide a simple 2-sentence diagnosis.
+                Then provide 1 actionable immediate suggestion.
+                Use simple words that farmers can understand. Include relevant emojis.`
+            ]);
 
             analysisText = extractGeminiText(aiResponse);
         } catch (aiError) {
@@ -461,39 +540,59 @@ router.post('/pests/detect', upload.single('image'), async (req, res) => {
         // Search for matching pest in database (case-insensitive)
         const safePattern = escapeRegex(identifiedPest.split('(')[0].trim());
         let pest = null;
-
-        if (safePattern) {
-            pest = await Pest.findOne({
-                name: { $regex: new RegExp(safePattern, 'i') }
-            });
-        }
-
-        // Secondary fuzzy match if exact regex does not find a record
-        if (!pest && identifiedPest !== 'Unknown') {
-            const allPests = await Pest.find();
-            const normalizedDetected = identifiedPest.toLowerCase();
-            pest = allPests.find((item) => {
-                const normalizedName = item.name.toLowerCase();
-                return normalizedDetected.includes(normalizedName) || normalizedName.includes(normalizedDetected);
-            }) || null;
-        }
-
         let treatment = null;
-        if (pest) {
-            treatment = await Treatment.findOne({ pestId: pest._id }) || await Treatment.findOne({ pestName: pest.name });
+        let dbReady = mongoConnected();
+
+        if (dbReady) {
+            try {
+                if (safePattern) {
+                    pest = await Pest.findOne({
+                        name: { $regex: new RegExp(safePattern, 'i') }
+                    });
+                }
+
+                // Secondary fuzzy match if exact regex does not find a record
+                if (!pest && identifiedPest !== 'Unknown') {
+                    const allPests = await Pest.find();
+                    const normalizedDetected = identifiedPest.toLowerCase();
+                    pest = allPests.find((item) => {
+                        const normalizedName = item.name.toLowerCase();
+                        return normalizedDetected.includes(normalizedName) || normalizedName.includes(normalizedDetected);
+                    }) || null;
+                }
+
+                if (pest) {
+                    treatment = await Treatment.findOne({ pestId: pest._id }) || await Treatment.findOne({ pestName: pest.name });
+                }
+            } catch (dbError) {
+                dbReady = false;
+                console.error('Pest DB lookup error:', dbError.message);
+            }
         }
 
         let source = 'ai';
         let warning = null;
 
         if (!treatment) {
-            const advisoryTreatment = await getAdvisoryTreatmentRecord();
+            let advisoryTreatment = null;
+
+            if (dbReady) {
+                try {
+                    advisoryTreatment = await getAdvisoryTreatmentRecord();
+                } catch (advisoryError) {
+                    dbReady = false;
+                    console.error('Advisory treatment lookup error:', advisoryError.message);
+                }
+            }
+
             treatment = advisoryTreatment || genericFallbackTreatment;
             source = 'advisory';
 
-            warning = pest
-                ? 'Exact treatment for detected disease is not available yet. Showing safe preventive advisory.'
-                : 'Detected disease could not be matched confidently. Showing safe preventive advisory.';
+            warning = !dbReady
+                ? 'Treatment database is temporarily unavailable. Showing safe preventive advisory.'
+                : pest
+                    ? 'Exact treatment for detected disease is not available yet. Showing safe preventive advisory.'
+                    : 'Detected disease could not be matched confidently. Showing safe preventive advisory.';
 
             analysisText = `${analysisText}\n\nAdvisory note: Use the dosage and safety section below carefully. Consult local agriculture officer before repeating spray.`;
         }
