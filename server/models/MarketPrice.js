@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
 const marketPriceSchema = new mongoose.Schema({
     cropName: { type: String, required: true },
