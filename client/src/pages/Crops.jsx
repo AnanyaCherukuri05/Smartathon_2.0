@@ -13,7 +13,7 @@ const Crops = () => {
     const [selectedSoil, setSelectedSoil] = useState(null);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [recommendation, setRecommendation] = useState(null);
-    const [loading, setLoading] = useState(false);    cd "c:\Users\gouds\OneDrive\Desktop\SmartCropApp\Smartathon_2.0"    cd "c:\Users\gouds\OneDrive\Desktop\SmartCropApp\Smartathon_2.0"
+    const [loading, setLoading] = useState(false);
 
     const soils = [
         { id: 'dry', icon: Sun, label: 'Dry', color: 'bg-green-50 text-green-700 border-green-200' },
