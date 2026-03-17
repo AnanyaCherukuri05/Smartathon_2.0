@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CloudRain, Sun, Cloud, AlertTriangle, Droplets, MapPin, Loader2 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import SectionHeader from '../components/SectionHeader';
+import { apiFetch } from '../lib/apiClient';
 
 const Weather = () => {
     const { t } = useTranslation();
@@ -16,11 +17,11 @@ const Weather = () => {
     const fetchWeather = async (lat = 28.6139, lon = 77.2090) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/weather?lat=${lat}&lon=${lon}`);
-            const data = await res.json();
-            setWeatherData(data);
+            const data = await apiFetch(`/api/weather?lat=${lat}&lon=${lon}`, { auth: false });
+            setWeatherData(data || null);
         } catch (error) {
             console.error("Failed to fetch weather", error);
+            setWeatherData(null);
         } finally {
             setLoading(false);
         }

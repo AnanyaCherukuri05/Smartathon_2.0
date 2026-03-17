@@ -1,9 +1,12 @@
-cd D:\KisanSetu\Smartathon_2.0
-git rm -r --cached server/node_modules
-git rm -r --cached client/node_modulesgit add .import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 import PestResultCard from '../components/PestResultCard';
+import SectionHeader from '../components/SectionHeader';
+import GlassCard from '../components/GlassCard';
+import GradientButton from '../components/GradientButton';
+import { apiFetch } from '../lib/apiClient';
 
 const Pests = () => {
     const { t } = useTranslation();
@@ -25,16 +28,11 @@ const Pests = () => {
         formData.append('image', file);
 
         try {
-            const res = await fetch('http://localhost:5000/api/pests/detect', {
+            const data = await apiFetch('/api/pests/detect', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                auth: false
             });
-
-            const data = await res.json();
-            if (!res.ok) {
-                const detailMessage = data?.details ? `${data.error}: ${data.details}` : data?.error;
-                throw new Error(detailMessage || 'Failed to analyze image');
-            }
 
             setResult({
                 status: 'analyzed',
