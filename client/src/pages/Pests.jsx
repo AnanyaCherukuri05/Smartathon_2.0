@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Camera, Image as ImageIcon, ShieldCheck, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Camera, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 import PestResultCard from '../components/PestResultCard';
@@ -10,7 +11,6 @@ import { apiFetch } from '../lib/apiClient';
 
 const Pests = () => {
     const { t } = useTranslation();
-    const MotionDiv = motion.div;
     const [isScanning, setIsScanning] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
@@ -63,16 +63,21 @@ const Pests = () => {
             <SectionHeader title={`${t('pests')} Detection`} subtitle="Upload a crop image for AI analysis" />
 
             {!isScanning && !result && (
-                <GlassCard className="card-neuro mt-8 border-dashed p-8 text-center">
-                    <MotionDiv
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-emerald-200/35 bg-emerald-400/15 text-emerald-200"
-                    >
+                <GlassCard className="mt-8 border-dashed border-green-200 p-8 text-center">
+                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-xl bg-green-100 text-green-600">
                         <Camera className="h-12 w-12" />
-                    </MotionDiv>
-                    <h3 className="text-display mb-2 text-2xl font-semibold text-white">Take a photo of your crop</h3>
-                    <p className="mb-8 text-sm font-medium text-slate-300">To identify pests or diseases automatically</p>
+                    </div>
+                    <h3 className="text-display mb-2 text-2xl font-semibold text-gray-800">Take a photo of your crop</h3>
+                    <p className="mb-8 text-sm font-medium text-gray-600">To identify pests or diseases automatically</p>
+
+                    <div className="mb-8 grid grid-cols-3 gap-3 text-left">
+                        {['Leaf scan', 'Disease clue', 'Field ready'].map((item) => (
+                            <div key={item} className="rounded-xl border border-green-100 bg-green-50 p-3">
+                                <div className="mb-2 h-16 rounded-xl bg-white" />
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">{item}</p>
+                            </div>
+                        ))}
+                    </div>
 
                     <input
                         type="file"
@@ -91,29 +96,65 @@ const Pests = () => {
             {isScanning && (
                 <GlassCard className="mt-8 p-8 text-center">
                     <div className="relative mx-auto mb-6 flex h-32 w-32 items-center justify-center">
-                        <div className="absolute inset-0 rounded-full border-4 border-slate-200/20"></div>
-                        <div className="absolute inset-0 animate-spin rounded-full border-4 border-emerald-300 border-t-transparent"></div>
-                        <Camera className="h-12 w-12 animate-pulse text-emerald-200" />
+                        <div className="absolute inset-0 rounded-full border-4 border-green-100"></div>
+                        <div className="absolute inset-0 animate-spin rounded-full border-4 border-green-500 border-t-transparent"></div>
+                        <Camera className="h-12 w-12 text-green-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white">Scanning Image...</h3>
-                    <p className="mt-2 text-sm font-medium text-slate-300">Analyzing leaves for pests</p>
+                    <h3 className="text-xl font-semibold text-gray-800">Scanning Image...</h3>
+                    <p className="mt-2 text-sm font-medium text-gray-600">Analyzing leaves for pests</p>
                 </GlassCard>
             )}
 
             {error && !isScanning && (
-                <GlassCard className="rounded-2xl border-red-300/35 bg-red-400/10 p-4 text-center text-sm font-semibold text-red-200">
+                <GlassCard className="rounded-xl border-green-200 bg-green-50 p-4 text-center text-sm font-semibold text-green-700">
                     {error}
                 </GlassCard>
             )}
 
             {result && (
+
+                <div className="space-y-6">
+                    <GlassCard className="p-6">
+                        <div className="mb-4 grid grid-cols-3 gap-3">
+                            <div className="rounded-xl border border-green-100 bg-green-50 p-3" />
+                            <div className="rounded-xl border border-green-100 bg-green-50 p-3" />
+                            <div className="rounded-xl border border-green-100 bg-green-50 p-3" />
+                        </div>
+                        <div className="hidden">
+                            <ShieldCheck className="h-28 w-28 text-emerald-200" />
+                        </div>
+
+                        <div className="mb-2 flex items-center gap-3">
+                            <div className="rounded-xl bg-green-100 p-3 text-green-600">
+                                <ShieldCheck className="h-7 w-7" />
+                            </div>
+                            <h3 className="text-display text-2xl font-semibold text-gray-800">AI Diagnosis</h3>
+                        </div>
+
+                        <div className="mt-4 rounded-xl border border-green-100 bg-green-50 p-5">
+                            <p className="whitespace-pre-wrap text-base font-medium leading-relaxed text-gray-700">
+                                {result.analysis}
+                            </p>
+                        </div>
+                    </GlassCard>
+
                 <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
                     <PestResultCard result={result.data} />
 
                     <GradientButton
                         onClick={handleReset}
-                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.45)]"
+                        className="flex items-center justify-center gap-2"
                     >
+                        <RefreshCw className="h-5 w-5" />
+                        Scan Another Crop
+                    </GradientButton>
+                </div>
+            )}
+
+            {!isScanning && !result && !error && (
+                <GlassCard className="p-4 text-center">
+                    <p className="text-sm font-medium text-gray-600">No scans yet. Upload a photo to start diagnosis.</p>
+                </GlassCard>
                         <RefreshCw className="w-5 h-5" />
                         Scan Another Leaf
                     </GradientButton>
