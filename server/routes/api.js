@@ -13,6 +13,29 @@ const MarketPrice = require("../models/MarketPrice");
 
 dotenv.config();
 
+const getOpenWeatherApiKey = () => (
+  process.env.WEATHER_API_KEY ||
+  process.env.OPENWEATHER_API_KEY ||
+  process.env.OPEN_WEATHER_API_KEY
+);
+
+const getOpenWeatherBaseUrl = () => {
+  const raw = (
+    process.env.OPENWEATHER_BASE_URL ||
+    process.env.WEATHER_API_BASE_URL ||
+    process.env.WEATHER_BASE_URL ||
+    'https://api.openweathermap.org'
+  );
+
+  return String(raw).trim().replace(/\/+$/, '');
+};
+
+const buildOpenWeatherUrl = (path) => {
+  const base = getOpenWeatherBaseUrl();
+  const suffix = String(path || '').startsWith('/') ? String(path || '') : `/${path}`;
+  return `${base}${suffix}`;
+};
+
 /*
 ==============================
 Gemini AI Initialization
@@ -41,6 +64,73 @@ if (geminiApiKey) {
 }
 
 const mongoConnected = () => mongoose.connection?.readyState === 1;
+
+// Reverse-geocode cache to avoid hitting external services repeatedly.
+// Keyed by rounded coordinates (~110m at 3 decimals).
+const placeCache = new Map();
+const PLACE_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
+
+const roundCoord = (value, decimals = 3) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  const factor = 10 ** decimals;
+  return Math.round(numeric * factor) / factor;
+};
+
+const getCachedPlace = (lat, lon) => {
+  const key = `${roundCoord(lat)}:${roundCoord(lon)}`;
+  const hit = placeCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.timestamp > PLACE_CACHE_TTL_MS) {
+    placeCache.delete(key);
+    return null;
+  }
+  return hit.value;
+};
+
+const setCachedPlace = (lat, lon, value) => {
+  const key = `${roundCoord(lat)}:${roundCoord(lon)}`;
+  placeCache.set(key, { timestamp: Date.now(), value });
+};
+
+const reverseGeocodeNominatim = async (lat, lon) => {
+  const cached = getCachedPlace(lat, lon);
+  if (cached) return cached;
+
+  // Nominatim usage policy requires a valid User-Agent.
+  const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+    params: {
+      format: 'jsonv2',
+      lat,
+      lon,
+      zoom: 16,
+      addressdetails: 1
+    },
+    headers: {
+      'User-Agent': 'KisanSetu/1.0 (reverse-geocode; local dev)'
+    },
+    timeout: 6000
+  });
+
+  const body = response?.data;
+  const address = body?.address || {};
+
+  const name = address.village || address.town || address.city || address.suburb || address.county || address.state_district || null;
+  const state = address.state || null;
+  const country = address.country_code ? String(address.country_code).toUpperCase() : (address.country || null);
+  const displayName = body?.display_name || [name, state, country].filter(Boolean).join(', ') || null;
+
+  const place = {
+    name,
+    state,
+    country,
+    displayName,
+    source: 'nominatim'
+  };
+
+  setCachedPlace(lat, lon, place);
+  return place;
+};
 
 let twilioClient = null;
 const weatherAlertCache = new Map();
@@ -145,6 +235,7 @@ const markAlertSent = (cacheKey) => {
 
 const buildWeatherInsights = (currentData, forecastItems = []) => {
     const next24h = forecastItems.slice(0, 8);
+  const next12h = forecastItems.slice(0, 4);
     const totalRainMm24h = next24h.reduce((sum, item) => sum + toNumber(item?.rain?.['3h']), 0);
     const maxRainMm3h = next24h.reduce((max, item) => Math.max(max, toNumber(item?.rain?.['3h'])), 0);
     const maxPop = next24h.reduce((max, item) => Math.max(max, toNumber(item?.pop)), 0);
@@ -200,6 +291,50 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
             ? 'Moderate rainfall expected. Plan operations carefully.'
             : 'Low rainfall risk in next 24 hours.';
 
+    // Farm-operation suggestions (today)
+    const next12hRainMm = next12h.reduce((sum, item) => sum + toNumber(item?.rain?.['3h']), 0);
+    const next12hMaxPop = next12h.reduce((max, item) => Math.max(max, toNumber(item?.pop)), 0);
+    const next12hMaxRainMm3h = next12h.reduce((max, item) => Math.max(max, toNumber(item?.rain?.['3h'])), 0);
+
+    const isLikelyWetSoon = riskLevel === 'high'
+      || next12hMaxRainMm3h >= 5
+      || next12hRainMm >= 8
+      || next12hMaxPop >= 0.65;
+
+    const isWindyForSpray = windKmh >= 20;
+    const isVeryHot = temperature >= 35;
+    const isVeryHumid = humidity >= 85;
+
+    const op = (status, message) => ({ status, message });
+
+    const harvest = isLikelyWetSoon
+      ? op('caution', 'Rain may come soon. Harvest only if you can finish quickly and keep produce covered.')
+      : op('good', 'Good for harvesting today. Dry and store produce in a covered place.');
+
+    const fertilizer = isLikelyWetSoon
+      ? op('avoid', 'Do not apply fertilizer now. Rain can wash it away. Apply after rain or in a dry window.')
+      : op('good', 'Good to apply fertilizer today if soil has moisture. Water lightly if needed.');
+
+    const spraying = isLikelyWetSoon
+      ? op('avoid', 'Do not spray today if rain is likely. Spray can wash off.')
+      : isWindyForSpray
+        ? op('caution', 'Wind is strong. Spray only in early morning/evening and avoid drift.')
+        : op('good', 'Good for spraying today. Prefer early morning or late afternoon.');
+
+    const irrigation = riskLevel === 'high' || next12hRainMm >= 3
+      ? op('avoid', 'Skip irrigation today. Rain/moist conditions expected. Keep drainage clear.')
+      : isVeryHot
+        ? op('caution', 'Hot today. Irrigate early morning and use mulching to save water.')
+        : op('good', 'Irrigate only if soil is dry. Avoid over-watering.');
+
+    const fieldWork = isLikelyWetSoon
+      ? op('caution', 'Be careful with field work. Soil may become wet/slippery. Avoid heavy operations.')
+      : op('good', 'Normal field work is fine today.');
+
+    const diseaseRisk = isVeryHumid
+      ? op('caution', 'High humidity: higher fungal risk. Check leaves for spots/mildew.')
+      : op('good', 'Normal disease risk today. Continue regular crop monitoring.');
+
     return {
         rainfall: {
             riskLevel,
@@ -213,6 +348,14 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
         farmerAdvisory: {
             summary,
             recommendations
+        },
+        farmOperations: {
+          harvest,
+          fertilizer,
+          spraying,
+          irrigation,
+          fieldWork,
+          diseaseRisk
         }
     };
 };
@@ -399,7 +542,7 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
     }
   };
 
-  const normalizeSoilKey = (value = '') => {
+const normalizeSoilKey = (value = '') => {
     const input = normalizeTextKey(value)
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
@@ -610,6 +753,31 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
         rain: rainMm ? { '3h': rainMm } : undefined
       };
     });
+router.get('/weather', async (req, res) => {
+    try {
+    const parseCoord = (value) => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
+    };
+
+    const hasLat = Object.prototype.hasOwnProperty.call(req.query || {}, 'lat');
+    const hasLon = Object.prototype.hasOwnProperty.call(req.query || {}, 'lon');
+
+    let lat = parseCoord(req.query.lat);
+    let lon = parseCoord(req.query.lon);
+
+    if ((hasLat && lat === null) || (hasLon && lon === null)) {
+      return res.status(400).json({ error: 'Invalid coordinates' });
+    }
+
+    if (lat === null) lat = 28.6139;
+    if (lon === null) lon = 77.2090;
+
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      return res.status(400).json({ error: 'Coordinates out of range' });
+    }
+
+        const apiKey = getOpenWeatherApiKey();
 
     const currentData = {
       name: city,
@@ -618,7 +786,7 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
       weather: [{ id: weatherCode, description }],
       wind: { speed: windKmh / 3.6 }
     };
-
+      
     const insights = buildWeatherInsights(currentData, forecastItems);
 
     return {
@@ -682,6 +850,15 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
           if (key && price > 0) {
             priceLookup[key] = price;
           }
+
+        const currentResponse = await axios.get(buildOpenWeatherUrl('/data/2.5/weather'), {
+            params: {
+                lat,
+                lon,
+                appid: apiKey,
+                units: 'metric'
+          },
+          timeout: 7000
         });
       } catch (dbError) {
         console.error('Market DB lookup failed:', dbError.message);
@@ -692,6 +869,7 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
     if (!apiKey) {
       return priceLookup;
     }
+
 
     try {
       const response = await axios.get(
@@ -712,6 +890,89 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
         const price = toNumber(record?.modal_price);
         if (key && price > 0) {
           priceLookup[key] = price;
+
+        const resolvedLat = toNumber(data?.coord?.lat, lat);
+        const resolvedLon = toNumber(data?.coord?.lon, lon);
+
+        let place = null;
+        try {
+          const geoResponse = await axios.get(buildOpenWeatherUrl('/geo/1.0/reverse'), {
+            params: {
+              lat: resolvedLat,
+              lon: resolvedLon,
+              limit: 5,
+              appid: apiKey
+            },
+            timeout: 6000
+          });
+
+          const candidates = Array.isArray(geoResponse.data) ? geoResponse.data : [];
+          const toRad = (deg) => (Number(deg) * Math.PI) / 180;
+          const haversineKm = (aLat, aLon, bLat, bLon) => {
+            const R = 6371;
+            const dLat = toRad(bLat - aLat);
+            const dLon = toRad(bLon - aLon);
+            const lat1 = toRad(aLat);
+            const lat2 = toRad(bLat);
+
+            const sinDLat = Math.sin(dLat / 2);
+            const sinDLon = Math.sin(dLon / 2);
+            const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon;
+            return 2 * R * Math.asin(Math.sqrt(h));
+          };
+
+          const best = candidates
+            .filter((item) => Number.isFinite(Number(item?.lat)) && Number.isFinite(Number(item?.lon)))
+            .map((item) => ({
+              item,
+              distanceKm: haversineKm(resolvedLat, resolvedLon, Number(item.lat), Number(item.lon))
+            }))
+            .sort((a, b) => a.distanceKm - b.distanceKm)[0]?.item || null;
+
+          if (best) {
+            const name = best.name || null;
+            const state = best.state || null;
+            const country = best.country || null;
+            const displayName = [name, state, country].filter(Boolean).join(', ') || null;
+
+            place = {
+              name,
+              state,
+              country,
+              displayName,
+              source: 'openweather'
+            };
+          }
+        } catch (geoError) {
+          console.error('Weather reverse geocode error:', geoError.message);
+        }
+
+        // Prefer a more precise locality label when available.
+        try {
+            const nominatimPlace = await reverseGeocodeNominatim(resolvedLat, resolvedLon);
+            if (nominatimPlace?.displayName) {
+                place = nominatimPlace;
+            }
+        } catch (nominatimError) {
+            // Silent fallback: weather should still work even if reverse-geocoding fails.
+        }
+
+        let forecastItems = [];
+        try {
+            const forecastResponse = await axios.get(buildOpenWeatherUrl('/data/2.5/forecast'), {
+                params: {
+              lat: resolvedLat,
+              lon: resolvedLon,
+                    appid: apiKey,
+                    units: 'metric',
+                    cnt: 12
+            },
+            timeout: 7000
+            });
+            forecastItems = forecastResponse?.data?.list || [];
+        } catch (forecastError) {
+            console.error('Weather forecast API error:', forecastError.message);
+
         }
       });
     } catch (marketError) {
@@ -763,6 +1024,7 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
       seasonContext
     });
 
+
     const recommendationText = aiExplanation ||
       `Detected ${seasonContext.label}. For ${effectiveSoilProfile.label}, ${crop.name} shows the best market-aligned profit potential this cycle.`;
 
@@ -810,6 +1072,33 @@ const buildWeatherInsights = (currentData, forecastItems = []) => {
       }))
     };
   };
+
+        res.json({
+          city: data.name,
+          place,
+          requestedLocation: {
+            lat,
+            lon
+          },
+            location: {
+            lat: resolvedLat,
+            lon: resolvedLon
+            },
+            temperature: data.main?.temp,
+            weather_code: data.weather?.[0]?.id,
+            wind_speed: (data.wind?.speed ?? 0) * 3.6,
+            humidity: data.main?.humidity,
+            description: data.weather?.[0]?.description,
+            rainfall: insights.rainfall,
+            farmerAdvisory: insights.farmerAdvisory,
+            farmOperations: insights.farmOperations,
+            forecast: forecastItems.slice(0, 6).map((item) => ({
+                time: item.dt_txt,
+                temp: item.main?.temp,
+                pop: Math.round(toNumber(item.pop) * 100),
+                rainMm3h: Number(toNumber(item?.rain?.['3h']).toFixed(1))
+            }))
+        });
 
   const getAiRecommendationFromImage = async ({
     file,
@@ -1024,9 +1313,16 @@ Weather by City
 ========================================
 */
 router.get('/weather/:city', async (req, res) => {
+
     const city = String(req.params.city || '').trim();
     if (!city) {
         return res.status(400).json({ error: 'City is required' });
+    try {
+    const apiKey = getOpenWeatherApiKey();
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "OpenWeather API key missing" });
+
     }
 
     const apiKey = process.env.WEATHER_API_KEY;
@@ -1043,6 +1339,7 @@ router.get('/weather/:city', async (req, res) => {
         });
     }
 
+
     try {
         const response = await axios.get(
             'https://api.openweathermap.org/data/2.5/weather',
@@ -1055,6 +1352,15 @@ router.get('/weather/:city', async (req, res) => {
                 timeout: 7000
             }
         );
+
+        const response = await axios.get(buildOpenWeatherUrl('/data/2.5/weather'), {
+          params: {
+            q: city,
+            appid: apiKey,
+            units: 'metric'
+          },
+          timeout: 7000
+        });
 
         const data = response.data;
 

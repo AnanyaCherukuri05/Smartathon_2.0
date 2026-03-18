@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, BellRing, Cloud, CloudRain, Droplets, Loader2, MapPin, Sun, Wind } from 'lucide-react';
+import { BellRing, Cloud, CloudRain, Loader2, MapPin, Sun, Wind } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import SectionHeader from '../components/SectionHeader';
 import { apiFetch } from '../lib/apiClient';
 
 const DEFAULT_COORDS = { lat: 28.6139, lon: 77.2090 };
-const TARGET_ACCURACY_METERS = 1200;
-const APPROXIMATE_ACCURACY_METERS = 3000;
+const TARGET_ACCURACY_METERS = 150;
+const APPROXIMATE_ACCURACY_METERS = 600;
 const MAX_GPS_WAIT_MS = 18000;
-const REJECT_ACCURACY_METERS = 20000;
+const REJECT_ACCURACY_METERS = 5000;
 const FRESH_POSITION_MAX_AGE_MS = 120000;
 
 const getPositionAccuracy = (position) => Number(position?.coords?.accuracy ?? Number.POSITIVE_INFINITY);
@@ -315,36 +315,6 @@ const Weather = () => {
         return { icon: Sun, color: 'text-green-600', bg: 'bg-green-100' };
     };
 
-    const getAdvisory = (data) => {
-        const code = data?.weather_code;
-        const rainfall = data?.rainfall;
-
-        if (rainfall?.riskLevel === 'high') {
-            return {
-                msg: 'High rainfall expected in your region',
-                action: rainfall.alertMessage || 'Take preventive crop protection measures now.',
-                alert: true
-            };
-        }
-
-        if (rainfall?.riskLevel === 'medium') {
-            return {
-                msg: 'Moderate rainfall likely',
-                action: 'Postpone spraying and check field drainage today.',
-                alert: true
-            };
-        }
-
-        if (code >= 500 && code < 600) {
-            return { msg: 'Rainfall in progress', action: 'Avoid spraying and unnecessary irrigation now.', alert: true };
-        }
-
-        if (code === 800) {
-            return { msg: 'Weather looks stable', action: 'Good time for planned field activities.', alert: false };
-        }
-
-        return { msg: 'Normal conditions', action: 'Continue regular crop monitoring.', alert: false };
-    };
 
     const locationBadgeText = useMemo(() => {
         if (locationStatus === 'live') return 'Live location';
@@ -393,10 +363,18 @@ const Weather = () => {
 
     const current = weatherData;
     const visuals = current ? getWeatherVisuals(current.weather_code) : getWeatherVisuals(800);
-    const advisory = getAdvisory(current);
     const WeatherIcon = visuals.icon;
-    const advisoryList = current?.farmerAdvisory?.recommendations || [];
     const rainfall = current?.rainfall;
+    const ops = current?.farmOperations || null;
+    const placeLabel = (() => {
+        const place = current?.place;
+        if (place?.name) {
+            const parts = [place.name, place.state, place.country].filter(Boolean);
+            return parts.join(', ');
+        }
+        if (place?.displayName) return place.displayName;
+        return current?.city || '';
+    })();
 
     return (
         <div className="page-reveal space-y-6 pb-10">
@@ -430,10 +408,10 @@ const Weather = () => {
                     {locationMeta ? (
                         <p className="mb-2 text-xs font-semibold text-slate-500">
                             {locationMeta.source === 'live' && Number.isFinite(locationMeta.accuracy)
-                                ? `Accuracy ~${Math.round(locationMeta.accuracy)}m | ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`
+                                ? `Accuracy ~${Math.round(locationMeta.accuracy)}m | ${locationMeta.lat?.toFixed?.(5)}, ${locationMeta.lon?.toFixed?.(5)}`
                                 : locationMeta.source === 'approximate' && Number.isFinite(locationMeta.accuracy)
-                                    ? `Approx ~${(locationMeta.accuracy / 1000).toFixed(1)} km | ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`
-                                : `Using coordinates ${locationMeta.lat?.toFixed?.(4)}, ${locationMeta.lon?.toFixed?.(4)}`}
+                                    ? `Approx ~${(locationMeta.accuracy / 1000).toFixed(1)} km | ${locationMeta.lat?.toFixed?.(5)}, ${locationMeta.lon?.toFixed?.(5)}`
+                                    : `Using coordinates ${locationMeta.lat?.toFixed?.(5)}, ${locationMeta.lon?.toFixed?.(5)}`}
                         </p>
                     ) : null}
 
@@ -451,7 +429,7 @@ const Weather = () => {
                     </div>
 
                     <p className="mt-2 text-base font-medium capitalize text-gray-600">
-                        {current?.city ? `${current.city} | ` : ''}
+                        {placeLabel ? `${placeLabel} | ` : ''}
                         {current?.description || 'Clear'} | Wind: {Math.round(current?.wind_speed || 0)} km/h
                     </p>
 
@@ -511,6 +489,51 @@ const Weather = () => {
                 </GlassCard>
             )}
 
+            {ops ? (
+                <GlassCard className="border-emerald-100/80 bg-white/80 p-5">
+                    <h4 className="text-lg font-semibold text-slate-800">Today's Actions</h4>
+                    <p className="mt-1 text-sm font-medium text-slate-600">Simple suggestions for the next few hours.</p>
+
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {[
+                            { key: 'harvest', label: 'Harvest' },
+                            { key: 'fertilizer', label: 'Fertilizer' },
+                            { key: 'spraying', label: 'Spraying' },
+                            { key: 'irrigation', label: 'Irrigation' }
+                        ].map(({ key, label }) => {
+                            const item = ops?.[key];
+                            if (!item) return null;
+                            const status = String(item.status || '').toLowerCase();
+                            const badgeClass = status === 'good'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : status === 'avoid'
+                                    ? 'bg-red-50 text-red-800 border-red-200'
+                                    : 'bg-amber-50 text-amber-800 border-amber-200';
+
+                            const badgeText = status === 'good' ? 'OK' : status === 'avoid' ? 'AVOID' : 'CARE';
+
+                            return (
+                                <div key={key} className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="text-sm font-semibold text-slate-800">{label}</p>
+                                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] ${badgeClass}`}>
+                                            {badgeText}
+                                        </span>
+                                    </div>
+                                    <p className="mt-2 text-sm font-medium text-slate-600">{item.message}</p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {ops?.diseaseRisk?.message ? (
+                        <p className="mt-4 rounded-2xl border border-emerald-100 bg-white/85 px-4 py-3 text-sm font-semibold text-slate-700">
+                            Tip: {ops.diseaseRisk.message}
+                        </p>
+                    ) : null}
+                </GlassCard>
+            ) : null}
+
             {alertDeliveryStatus ? (
                 <GlassCard className={`border p-4 ${alertDeliveryStatus.type === 'success'
                     ? 'border-emerald-200 bg-emerald-50/70'
@@ -528,32 +551,6 @@ const Weather = () => {
                     </p>
                 </GlassCard>
             ) : null}
-
-            <SectionHeader title={t('advisory')} className="mb-0" />
-            <GlassCard className={`border-emerald-100/80 p-5 ${advisory.alert ? 'bg-amber-50/70' : 'bg-emerald-50/70'}`}>
-                <div className="flex items-center gap-4">
-                    <div className="rounded-xl bg-white p-3 text-emerald-700">
-                        {advisory.alert ? <AlertTriangle className="h-8 w-8" /> : <Droplets className="h-8 w-8" />}
-                    </div>
-                    <div>
-                        <h4 className="text-lg font-semibold text-slate-800">{advisory.msg}</h4>
-                        <p className="text-sm font-medium text-slate-600">{advisory.action}</p>
-                    </div>
-                </div>
-            </GlassCard>
-
-            <GlassCard className="border-emerald-100/80 p-5">
-                <h4 className="text-display text-xl font-semibold text-slate-800">Farmer Action Suggestions</h4>
-                <p className="mt-1 text-sm font-medium text-slate-600">{current?.farmerAdvisory?.summary || 'Follow weather-safe crop operations.'}</p>
-
-                <ul className="mt-4 space-y-2">
-                    {(advisoryList.length ? advisoryList : ['Keep monitoring local weather every few hours and plan field activity safely.']).map((item) => (
-                        <li key={item} className="rounded-xl border border-emerald-100 bg-white/85 px-3 py-2 text-sm font-semibold text-slate-700">
-                            {item}
-                        </li>
-                    ))}
-                </ul>
-            </GlassCard>
 
             {error ? (
                 <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
