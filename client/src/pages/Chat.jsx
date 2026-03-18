@@ -141,6 +141,15 @@ setMessages(prev=>[...prev,aiMsg]);
 
 }catch(err){
 console.error(err);
+
+const errorMsg = {
+role:"assistant",
+content: err?.message
+? `Unable to get AI response: ${err.message}`
+: "Unable to get AI response right now. Please try again."
+};
+
+setMessages(prev=>[...prev,errorMsg]);
 }
 
 };
