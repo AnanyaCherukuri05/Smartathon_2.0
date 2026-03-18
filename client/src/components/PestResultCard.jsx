@@ -18,10 +18,10 @@ import {
 const PestResultCard = ({ result }) => {
     const [expandedSections, setExpandedSections] = useState({
         symptoms: false,
+        cropCare: false,
         pesticides: false,
         fertilizers: false,
-        precautions: false,
-        safety: false
+        precautions: false
     });
 
     const toggleSection = (section) => {
@@ -158,6 +158,38 @@ const PestResultCard = ({ result }) => {
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+
+            {Array.isArray(result.cropCarePlan) && result.cropCarePlan.length > 0 && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-100 border border-emerald-200 rounded-3xl overflow-hidden shadow-lg">
+                    <button
+                        onClick={() => toggleSection('cropCare')}
+                        className="w-full flex items-center justify-between bg-emerald-600 text-white px-6 py-4 hover:bg-emerald-700 transition-colors"
+                    >
+                        <div className="flex items-center gap-3 font-bold text-lg">
+                            <Leaf className="w-6 h-6" />
+                            Immediate Crop Care Plan ({result.cropCarePlan.length})
+                        </div>
+                        {expandedSections.cropCare ? (
+                            <ChevronUp className="w-6 h-6" />
+                        ) : (
+                            <ChevronDown className="w-6 h-6" />
+                        )}
+                    </button>
+
+                    {expandedSections.cropCare && (
+                        <div className="p-6 space-y-3">
+                            {result.cropCarePlan.map((step, idx) => (
+                                <div key={idx} className="bg-white rounded-2xl p-4 border border-emerald-100 flex items-start gap-3">
+                                    <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+                                        {idx + 1}
+                                    </span>
+                                    <p className="text-sm font-medium leading-relaxed text-slate-700">{step}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 

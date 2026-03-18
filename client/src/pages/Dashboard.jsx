@@ -23,7 +23,7 @@ const Dashboard = () => {
             colorClass: 'bg-green-100 text-green-600',
             path: '/crops',
             description:
-                'AI-powered crop recommendation based on soil type, season, and environmental conditions.',
+                'AI-powered crop recommendation using soil, live season detection, market trends, and optional field photo analysis.',
         },
         {
             title: t('weather'),

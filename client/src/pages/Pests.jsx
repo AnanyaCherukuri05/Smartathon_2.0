@@ -7,6 +7,8 @@ import GlassCard from '../components/GlassCard';
 import GradientButton from '../components/GradientButton';
 import { apiFetch } from '../lib/apiClient';
 
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/heic,image/heif';
+
 const Pests = () => {
     const { t } = useTranslation();
     const [isScanning, setIsScanning] = useState(false);
@@ -65,9 +67,49 @@ const Pests = () => {
                 auth: false
             });
 
+            const diagnosisText = String(data?.diagnosis ?? data?.analysis ?? '').trim();
+            const diagnosisLower = diagnosisText.toLowerCase();
+            const hasStructuredTreatment = Boolean(
+                data?.treatment &&
+                (
+                    (Array.isArray(data?.treatment?.pesticides) && data.treatment.pesticides.length > 0) ||
+                    (Array.isArray(data?.treatment?.fertilizers) && data.treatment.fertilizers.length > 0)
+                )
+            );
+
+            if (!diagnosisText && !hasStructuredTreatment) {
+                setError('No diagnosis returned. Please upload a clearer crop photo and try again.');
+                setResult(null);
+                return;
+            }
+
+            if (
+                diagnosisLower.startsWith('diagnosis error:') ||
+                diagnosisLower.startsWith('error:') ||
+                diagnosisLower.includes('unable to process input image')
+            ) {
+                if (hasStructuredTreatment) {
+                    setResult({
+                        ...data,
+                        diagnosis: diagnosisText || 'Diagnosis summary unavailable. Follow treatment guidance below.'
+                    });
+                    return;
+                }
+
+                setError('Could not analyze this image. Upload a clear JPG/PNG photo of the affected crop area.');
+                setResult(null);
+                return;
+            }
+
+            if (diagnosisLower.includes('ai unavailable') && !hasStructuredTreatment) {
+                setError('AI is temporarily unavailable. Please try again in a minute.');
+                setResult(null);
+                return;
+            }
+
             setResult({
                 ...data,
-                diagnosis: data?.diagnosis ?? data?.analysis ?? ''
+                diagnosis: diagnosisText || 'Diagnosis summary unavailable. Follow treatment guidance below.'
             });
         } catch (err) {
             console.error(err);
@@ -180,7 +222,7 @@ const Pests = () => {
             <SectionHeader
                 eyebrow="Crop Health Scanner"
                 title={`${t('pests')} Detection`}
-                subtitle="Take a photo or upload a clear crop image to detect disease patterns and get treatment guidance."
+                subtitle="Take a photo or upload a clear crop image to get cure guidance, recommended pesticides/fertilizers, crop care actions, and farmer safety precautions."
             />
 
             {!isScanning && !result && !isCameraOpen && (
@@ -193,7 +235,7 @@ const Pests = () => {
 
                     <input
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_TYPES}
                         className="hidden"
                         ref={fileInputRef}
                         onChange={handleFileChange}
@@ -201,7 +243,7 @@ const Pests = () => {
 
                     <input
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_TYPES}
                         capture="environment"
                         className="hidden"
                         ref={cameraInputRef}
@@ -225,7 +267,7 @@ const Pests = () => {
                     </div>
 
                     <p className="mt-4 text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">
-                        Tip: Hold camera steady and focus on affected leaf area.
+                        Tip: Use clear JPG, PNG, WEBP, or HEIC photos under 5MB.
                     </p>
                 </GlassCard>
             )}
